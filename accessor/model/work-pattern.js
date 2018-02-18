@@ -1,10 +1,9 @@
-module.exports = {
+const commonInfo = require('./common-info');
+
+module.exports = Object.assign({
   id: {
     type: 'string',
     key: true,
-  },
-  name: {
-    type: 'string',
   },
   startWorkingTime: {
     type: 'time',
@@ -30,4 +29,4 @@ module.exports = {
   endBeforeCoreTime: {
     type: 'time',
   },
-}
+}, commonInfo);

@@ -1,4 +1,6 @@
-module.exports = {
+const commonInfo = require('./common-info');
+
+module.exports = Object.assign({
   workPatternId: {
     type: 'string',
     key: true,
@@ -9,4 +11,4 @@ module.exports = {
   breakTime: {
     type: 'boolean',
   },
-}
+}, commonInfo);
