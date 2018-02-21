@@ -9,6 +9,10 @@ Postgres.prototype._connect = async function() {
   await this._client.connect();
 };
 
+Postgres.prototype.initialize = function() {
+
+};
+
 Postgres.prototype.insert = function(model, values) {
   if (model == null || values == null) return;
 

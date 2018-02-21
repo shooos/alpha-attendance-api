@@ -1,12 +1,19 @@
-module.exports = {
-  id: {
-    type: 'string',
-    key: true,
-  },
-  password: {
-    type: 'password',
-  },
-  token: {
-    type: 'token',
-  },
-};
+module.exports = function() {
+  return {
+    id: {
+      type: 'string',
+      length: 16,
+      notNull: true,
+      key: true,
+    },
+    password: {
+      type: 'password',
+      length: 255,
+      notNull: true,
+    },
+    token: {
+      type: 'token',
+      length: 255,
+    },
+  };
+}
