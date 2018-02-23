@@ -1,7 +1,8 @@
-const commonInfo = require('./common-info')();
+const commonInfo = require('./common-info');
 
-module.exports = function() {
-  return Object.assign({
+module.exports = {
+  name: 'estimate_time',
+  columns: Object.assign({
     id: {
       type: 'string',
       notNull: true,
@@ -21,5 +22,5 @@ module.exports = function() {
     endTime: {
       type: 'time',
     },
-  }, commonInfo);
+  }, commonInfo),
 }

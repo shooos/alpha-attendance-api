@@ -1,5 +1,6 @@
-module.exports = function() {
-  return {
+module.exports = {
+  name: 'user',
+  columns: {
     id: {
       type: 'string',
       length: 16,
@@ -15,5 +16,5 @@ module.exports = function() {
       type: 'token',
       length: 255,
     },
-  };
+  },
 }

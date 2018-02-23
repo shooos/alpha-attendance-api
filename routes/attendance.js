@@ -1,9 +1,15 @@
-module.exports = (app, accessor) => {
-  app.post('/attendance/actualTime', (req, res) => {
+const Router = require('express-promise-router');
+const router = new Router();
+
+module.exports = (accessor) => {
+  router.post('/actualTime', async (req, res) => {
+    const result = await accessor.select();
+    res.send(result);
+  });
+
+  router.get('/actualTime', async (req, res) => {
 
   });
 
-  app.get('./attendance/actualTime', (req, res) => {
-
-  });
+  return router;
 };

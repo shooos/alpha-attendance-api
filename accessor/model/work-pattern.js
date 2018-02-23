@@ -1,7 +1,8 @@
-const commonInfo = require('./common-info')();
+const commonInfo = require('./common-info');
 
-module.exports = function() {
-  return Object.assign({
+module.exports = {
+  name: 'work_pattern',
+  columns: Object.assign({
     id: {
       type: 'string',
       length: 16,
@@ -32,5 +33,5 @@ module.exports = function() {
     endBeforeCoreTime: {
       type: 'time',
     },
-  }, commonInfo);
+  }, commonInfo),
 }

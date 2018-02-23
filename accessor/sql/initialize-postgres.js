@@ -1,95 +1,48 @@
-const createTableUser = 'CREATE TABLE user (\
-  user_cd VERCHAR(16) PRIMARY KEY,\
-  password VERCHAR(255),\
-  token VERCHAR(255)\
-  );';
+const createQuery = (model) => {
+  let columns = [];
+  let primaryKeys = [];
 
-const createTableActualTime = 'CREATE TABLE actual_time (\
-  id VERCHAR(16) PRIMARY KEY,\
-  user_cd VERCHAR(16) REFERENCES user(user_cd),\
-  date DATE,\
-  work_pattern VERCHAR(32),\
-  start_time TIME WITHOUT TIME ZONE,\
-  end_time TIME WITHOUT TIME ZONE,\
-  duty_hours INTERVAL HOUR TO MINUTE,\
-  night_hours INTERVAL HOUR TO MINUTE,\
-  semi_absence_hours INTERVAL HOUR TO MINUTE,\
-  create_user VERCHAR(16),\
-  create_date TIMESTAMP WITHOUT TIME ZONE,\
-  update_user VERCHAR(16),\
-  update_date TIMESTAMP WITHOUT TIME ZONE\
-  );';
+  Object.keys(model.columns).forEach((name) => {
+    const column = model.columns[name];
+    const columnName = name.replace(/[A-Z]/g, upperToUnderscoreLower);
+    const type = resolveType(column);
+    const definition = [columnName, type];
 
-const createTableActualTimeDetail = 'CREATE TABLE actual_time_detail (\
-  id VERCHAR(16) PRIMARY KEY,\
-  actual_time_id VERCHAR(16) REFERENCES actual_time(id),\
-  situation VERCHAR(32),\
-  sub_situation VERCHAR(32),\
-  p_code VERCHAR(16),\
-  start_time TIME WITHOUT TIME ZONE,\
-  end_time TIME WITHOUT TIME ZONE,\
-  create_user VERCHAR(16),\
-  create_date TIMESTAMP WITHOUT TIME ZONE,\
-  update_user VERCHAR(16),\
-  update_date TIMESTAMP WITHOUT TIME ZONE\
-  );';
+    if (column.notNull) definition.push('NOT NULL');
+    columns.push(definition.join(' '));
 
-const createTableWorkPattern = 'CREATE TABLE work_pattern (\
-  id VERCHAR(16) PRIMARY KEY,\
-  start_working_time TIME WITHOUT TIME ZONE,\
-  end_working_time TIME WITHOUT TIME ZONE,\
-  start_standard_time TIME WITHOUT TIME ZONE,\
-  end_standard_time TIME WITHOUT TIME ZONE,\
-  start_core_time TIME WITHOUT TIME ZONE,\
-  end_core_time TIME WITHOUT TIME ZONE,\
-  start_before_core_time TIME WITHOUT TIME ZONE,\
-  end_before_core_time TIME WITHOUT TIME ZONE,\
-  create_user VERCHAR(16),\
-  create_date TIMESTAMP WITHOUT TIME ZONE,\
-  update_user VERCHAR(16),\
-  update_date TIMESTAMP WITHOUT TIME ZONE\
-  );'
+    if (column.key) primaryKeys.push(columnName);
+  });
 
-const createTableWorkingHours = 'CREATE TABLE working_hours (\
-  work_pattern_id VERCHAR(16) REFERENCES work_pattern(id),\
-  start_time TIME WITHOUT TIME ZONE,\
-  break_time BOOLEAN,\
-  create_user VERCHAR(16),\
-  create_date TIMESTAMP WITHOUT TIME ZONE,\
-  update_user VERCHAR(16),\
-  update_date TIMESTAMP WITHOUT TIME ZONE,\
-  PRIMARY KEY(work_pattern_id, start_time)\
-  );';
+  return 'CREATE TABLE ' + model.name + ' (' + columns.join(', ') + ', ' + 'PRIMARY KEY(' + primaryKeys.join(', ') + '));'
+}
 
-const createTableEstimateTime = 'CREATE TABLE estimate_time (\
-  id VERCHAR(16) PRIMARY KEY,\
-  user_cd VERCHAR(16) REFERENCES user(user_cd),\
-  date DATE,\
-  start_time TIME WITHOUT TIME ZONE,\
-  end_time TIME WITHOUT TIME ZONE,\
-  create_user VERCHAR(16),\
-  create_date TIMESTAMP WITHOUT TIME ZONE,\
-  update_user VERCHAR(16),\
-  update_date TIMESTAMP WITHOUT TIME ZONE\
-  );';
+const resolveType = (column) => {
+  switch(column.type) {
+  case 'string':
+    return 'VERCHAR(' + column.length || 10 + ')';
+  case 'boolean':
+    return 'BOOL';
+  case 'date':
+    return 'DATE';
+  case 'time':
+    return 'TIME WITHOUT TIME ZONE';
+  case 'hours':
+    return 'INTERVAL HOUR TO MINUTE';
+  case 'datetime':
+    return 'TIMESTAMP WITHOUT TIME ZONE';
+  }
+}
 
-const createTableEstimateUnclaimedTime = 'CREATE TABLE estimate_unclaimed_time (\
-  id VERCHAR(16) PRIMARY KEY,\
-  estimate_time_id VERCHAR(16) REFERENCES estimate_time(id),\
-  start_time TIME WITHOUT TIME ZONE,\
-  end_time TIME WITHOUT TIME ZONE,\
-  create_user VERCHAR(16),\
-  create_date TIMESTAMP WITHOUT TIME ZONE,\
-  update_user VERCHAR(16),\
-  update_date TIMESTAMP WITHOUT TIME ZONE\
-  );';
+const upperToUnderscoreLower = (match) => {
+  return '_' + match.toLowerCase();
+}
 
-module.exports = {
-  user: createTableUser,
-  actualTime: createTableActualTime,
-  actualTime_detail: createTableActualTimeDetail,
-  workPattern: createTableWorkPattern,
-  workingHours: createTableWorkingHours,
-  estimateTime: createTableEstimateTime,
-  estimateUnclaimedTime: createTableEstimateUnclaimedTime,
+module.exports = function(models) {
+  const queries = [];
+  models.forEach((model) => {
+    queries.push(createQuery(model));
+  });
+
+  return queries;
 };

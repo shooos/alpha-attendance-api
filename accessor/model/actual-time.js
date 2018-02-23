@@ -1,7 +1,8 @@
-const commonInfo = require('./common-info')();
+const commonInfo = require('./common-info');
 
-module.exports = function() {
-  return Object.assign({
+module.exports = {
+  name: 'actual_time',
+  columns: Object.assign({
     id: {
       type: 'string',
       length: 16,
@@ -36,5 +37,5 @@ module.exports = function() {
     semiAbsenceHours: {
       type: 'hours',
     },
-  }, commonInfo);
+  }, commonInfo),
 }
