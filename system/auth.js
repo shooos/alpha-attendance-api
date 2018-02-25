@@ -7,12 +7,16 @@ const Auth = function (accessor) {
 }
 
 Auth.prototype.login = function (id, password) {
-  const token = uniqid();
   const updateQuery = new UpdateQuery(memberModel);
+  updateQuery.setUpdateValues({token: token});
 }
 
 Auth.prototype.authenticate = function (token) {
 
+}
+
+Auth.prototype.generateToken = function (id, password) {
+  const token = uniqid();
 }
 
 module.exports = Auth;
