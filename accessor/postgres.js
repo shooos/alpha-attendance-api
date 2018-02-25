@@ -1,26 +1,48 @@
-const {Client} = require('pg');
+const pg = require('pg');
 const logger = require('../system/logger');
 
-const Postgres = function(config) {
-  this._client = new Client(config);
+const Postgres = function() {
+  const config = require('../config/postgres-config.json');
+  this._pool = new pg.Pool(config);
 }
 
-Postgres.prototype.connect = async function() {
-  await this._client.connect();
-};
+Postgres.prototype._executeQuery = async function(queries) {
+  if (!queries || !queries.length) return;
 
-Postgres.prototype.executeQuery = async function(query) {
-  logger.system.info(query.text + ' [ ' + query.values.join(', ') + ' ]');
+  const client = await this._pool.connect();
+  let results = [];
 
-  const result = await this._client.query(query);
-  return result;
+  try {
+    await client.query('BEGIN');
+
+    try {
+      for (let query of queries) {
+        if (query.text && query.values) {
+          logger.system.info('Execute query: ', query.text + ' Params: [ ' + query.values.join(', ') + ' ]');
+        } else {
+          logger.system.info('Execute query: ', query);
+        }
+
+        const result = await client.query(query);
+        results.push(result.rows);
+
+        logger.system.info('Query result:', result.rows);
+      }
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    }
+    await client.query('COMMIT');
+  } finally {
+    await client.release();
+  }
+
+  return results;
 };
 
 Postgres.prototype.initialize = async function() {
-  const initializer = require('./sql/initialize-postgres');
-
   const models = [];
-  models.push(require('./model/user'));
+  models.push(require('./model/member'));
   models.push(require('./model/work-pattern'));
   models.push(require('./model/working-hours'));
   models.push(require('./model/actual-time'));
@@ -28,11 +50,15 @@ Postgres.prototype.initialize = async function() {
   models.push(require('./model/estimate-time'));
   models.push(require('./model/estimate-unclaimed-time'));
 
-  models.concat([]).forEach(async (model, index) => {
-    if (!await this.isExistsTables(model.name)) models.splice(index, 1);
-  });
+  for (let model of models.concat([])) {
+    const isExists = await this.isExistsTables(model.name);
+    if (isExists) models.splice(models.indexOf(model), 1);
+  }
 
-  const queries = initializer(models);
+  if (models.length) {
+    const initializer = require('./sql/postgres/initialize');
+    await this._executeQuery(initializer(models));
+  }
 };
 
 Postgres.prototype.isExistsTables = async function(tablename) {
@@ -42,24 +68,20 @@ Postgres.prototype.isExistsTables = async function(tablename) {
     rowMode: 'array',
   };
 
-  const result = await this.executeQuery(query);
-  return result.rows[0][0];
+  const results = await this._executeQuery([query]);
+  return results[0][0];
 };
 
-Postgres.prototype.insert = async function(model, values) {
-  if (model == null || values == null) return;
+Postgres.prototype.execute = async function(queryModels) {
+  if (queryModels == null) return;
 
+  const queries = queryModels.map((queryModel) => queryModel.getQuery());
+  const results = await this._executeQuery(queries).catch((err) => {
+    logger.error.error(err);
+    throw err;
+  });
 
-};
-
-Postgres.prototype.update = async function(model, values, condition) {
-  if (model == null || values == null) return;
-
-};
-
-Postgres.prototype.select = async function(model, condition) {
-  if (model == null) return;
-
+  return results;
 };
 
 module.exports = Postgres;

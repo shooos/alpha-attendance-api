@@ -6,7 +6,6 @@ module.exports = {
     workPatternId: {
       type: 'string',
       length: 16,
-      notNull: true,
       key: true,
       reference: {
         table: 'work_pattern',

@@ -6,10 +6,9 @@ module.exports = {
     id: {
       type: 'string',
       length: 16,
-      notNull: true,
       key: true,
     },
-    userCd: {
+    memberId: {
       type: 'string',
       notNull: true,
       length: 16,

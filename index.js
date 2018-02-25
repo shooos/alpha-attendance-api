@@ -11,26 +11,19 @@ const attendanceAPI = require('./routes/attendance');
 const userAPI = require('./routes/user');
 const workPatternAPI = require('./routes/work-pattern');
 
-const accessor = new Accessor({
-  host: 'localhost',
-  port: 5432,
-  database: 'attendance',
-  user: 'postgres',
-  password: 'postgres',
-});
+const accessor = new Accessor();
 
-accessor.connect()
+accessor.initialize()
 .then(() => {
-  accessor.initialize()
-  .then(() => {
-    app.use('/attendance', attendanceAPI(accessor));
-    app.use('/user', userAPI(accessor));
-    app.use('/workPattern', workPatternAPI(accessor));
+  app.use('/attendance', attendanceAPI(accessor));
+  app.use('/user', userAPI(accessor));
+  app.use('/workPattern', workPatternAPI(accessor));
 
-    app.listen(8080, () => {
-      console.log('listen!');
-    });
-  })
-  .catch(() => {throw new Error('Initialize failed.');});
+  app.listen(8080, () => {
+    logger.system.info('ｷﾀ━(ﾟ∀ﾟ)━!! STARTUP COMPLETE! Alpha Attendance APIs');
+  });
 })
-.catch(() => {throw new Error('Connection failed.');});
+.catch((err) => {
+  logger.error.error('(´･ω･`) STARTUP FAILED...orz', err);
+  throw err;
+});

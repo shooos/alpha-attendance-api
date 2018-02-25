@@ -5,12 +5,13 @@ module.exports = {
   columns: Object.assign({
     id: {
       type: 'string',
-      notNull: true,
+      length: 16,
       key: true,
     },
-    userCd: {
+    memberId: {
       type: 'string',
       length: 16,
+      notNull: true,
     },
     date: {
       type: 'date',

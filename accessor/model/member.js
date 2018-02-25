@@ -1,19 +1,18 @@
 module.exports = {
-  name: 'user',
+  name: 'member',
   columns: {
     id: {
       type: 'string',
       length: 16,
-      notNull: true,
       key: true,
     },
     password: {
-      type: 'password',
+      type: 'string',
       length: 255,
       notNull: true,
     },
     token: {
-      type: 'token',
+      type: 'string',
       length: 255,
     },
   },

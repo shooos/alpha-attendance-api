@@ -6,7 +6,6 @@ module.exports = {
     id: {
       type: 'string',
       length: 16,
-      notNull: true,
       key: true,
     },
     startWorkingTime: {

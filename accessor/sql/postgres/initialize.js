@@ -9,6 +9,7 @@ const createQuery = (model) => {
     const definition = [columnName, type];
 
     if (column.notNull) definition.push('NOT NULL');
+    if (column.reference) definition.push('REFERENCES ' + column.reference.table + '(' + column.reference.column + ') ON DELETE CASCADE');
     columns.push(definition.join(' '));
 
     if (column.key) primaryKeys.push(columnName);
@@ -20,7 +21,7 @@ const createQuery = (model) => {
 const resolveType = (column) => {
   switch(column.type) {
   case 'string':
-    return 'VERCHAR(' + column.length || 10 + ')';
+    return 'VARCHAR(' + column.length + ')';
   case 'boolean':
     return 'BOOL';
   case 'date':
