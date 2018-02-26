@@ -52,7 +52,9 @@ Postgres.prototype.initialize = async function() {
 
   for (let model of models.concat([])) {
     const isExists = await this.isExistsTables(model.name);
-    if (isExists) models.splice(models.indexOf(model), 1);
+    if (isExists) {
+      models.splice(models.indexOf(model), 1);
+    }
   }
 
   if (models.length) {
@@ -69,19 +71,23 @@ Postgres.prototype.isExistsTables = async function(tablename) {
   };
 
   const results = await this._executeQuery([query]);
-  return results[0][0];
+  return results[0][0][0];
 };
 
 Postgres.prototype.execute = async function(queryModels) {
   if (queryModels == null) return;
 
-  const queries = queryModels.map((queryModel) => queryModel.getQuery());
+  const queries = Array.isArray(queryModels) ? queryModels.map((queryModel) => queryModel.getQuery()) : [queryModels.getQuery()];
   const results = await this._executeQuery(queries).catch((err) => {
     logger.error.error(err);
     throw err;
   });
 
-  return results;
+  if (Array.isArray(queryModels)) {
+    return results;
+  } else {
+    return results[0];
+  }
 };
 
 module.exports = Postgres;

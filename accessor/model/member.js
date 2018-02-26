@@ -15,5 +15,9 @@ module.exports = {
       type: 'string',
       length: 255,
     },
+    host: {
+      type: 'string',
+      length: 64,
+    },
   },
 }

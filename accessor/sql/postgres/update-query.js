@@ -17,23 +17,23 @@ UpdateQueryModel.prototype.setUpdateValues = function (values) {
   });
 }
 
-UpdateQueryModel.prototype.addAndCondition = function (condition) {
+UpdateQueryModel.prototype.addAndCondition = function (name, value) {
   const key = '$' + (Object.keys(this._values).length + 1);
-  this._values[key] = condition.value;
+  this._values[key] = value;
 
   this._conditions.push({
     operator: 'AND',
-    expression: condition.key + '=' + key,
+    expression: name + '=' + key,
   });
 }
 
-UpdateQueryModel.prototype.addOrCondition = function (condition) {
+UpdateQueryModel.prototype.addOrCondition = function (name, value) {
   const key = '$' + (Object.keys(this._values).length + 1);
-  this._values[key] = condition.value;
+  this._values[key] = value;
 
   this._conditions.push({
     operator: 'OR',
-    condition: condition.key + '=' + key,
+    condition: name + '=' + key,
   });
 }
 

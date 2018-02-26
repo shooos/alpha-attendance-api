@@ -4,19 +4,22 @@ const logger = require('../system/logger');
 const InsertQuery = require('../accessor/sql/postgres/insert-query');
 const SelectQuery = require('../accessor/sql/postgres/select-query');
 const memberModel = require('../accessor/model/member');
+const Authenticator = require('../system/authenticator');
 
 module.exports = (accessor) => {
+  const authenticator = new Authenticator(accessor);
+
   router.post('/register', async (req, res) => {
     const body = req.body;
 
     const selectQuery = new SelectQuery(memberModel);
-    selectQuery.addAndCondition({key: 'id', value: body.id});
+    selectQuery.addAndCondition('id', body.id);
 
-    const members = await accessor.execute([selectQuery]).catch((err) => {
+    const members = await accessor.execute(selectQuery).catch((err) => {
       logger.error.error(err);
       return res.send({error: true, message: err});
     });
-    const isExists = !!(members)[0].length;
+    const isExists = !!(members).length;
     if (isExists) {
       const msg = body.id + ' already exsists';
       logger.system.warn(msg);
@@ -25,7 +28,7 @@ module.exports = (accessor) => {
 
     const insertQuery = new InsertQuery(memberModel);
     insertQuery.appendValues({id: body.id, password: body.password});
-    await accessor.execute([insertQuery]).catch((err) => {
+    await accessor.execute(insertQuery).catch((err) => {
       logger.error.error(err);
       return res.send({error: true, message: err});
     });
@@ -34,6 +37,10 @@ module.exports = (accessor) => {
   });
 
   router.post('/login', async (req, res) => {
+    const body = req.body;
+    if (body) res.send({error: true, message: 'Who are you?'});
+
+    await authenticator.login(body.id, body.password, body.host); // リクエスト元のホスト知りたいときはどうするの
     res.send(req.body);
   });
 

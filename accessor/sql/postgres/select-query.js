@@ -8,23 +8,23 @@ const SelectQueryModel = function (model) {
   this._values = {};
 }
 
-SelectQueryModel.prototype.addAndCondition = function (condition) {
+SelectQueryModel.prototype.addAndCondition = function (name, value) {
   const key = '$' + (Object.keys(this._values).length + 1);
-  this._values[key] = condition.value;
+  this._values[key] = value;
 
   this._conditions.push({
     operator: 'AND',
-    expression: condition.key + '=' + key,
+    expression: name + '=' + key,
   });
 }
 
-SelectQueryModel.prototype.addOrCondition = function (condition) {
+SelectQueryModel.prototype.addOrCondition = function (name, value) {
   const key = '$' + (Object.keys(this._values).length + 1);
-  this._values[key] = condition.value;
+  this._values[key] = value;
 
   this._conditions.push({
     operator: 'OR',
-    condition: condition.key + '=' + key,
+    condition: name + '=' + key,
   });
 }
 
