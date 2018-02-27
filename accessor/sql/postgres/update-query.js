@@ -17,23 +17,18 @@ UpdateQueryModel.prototype.setUpdateValues = function (values) {
   });
 }
 
-UpdateQueryModel.prototype.addAndCondition = function (name, value) {
+UpdateQueryModel.prototype.addCondition = function (operator, name, value, not) {
   const key = '$' + (Object.keys(this._values).length + 1);
-  this._values[key] = value;
+  if (value != null) {
+    this._values[key] = value;
+  }
+
+  const comparison = value != null ? (not ? ' != ' : ' = ') : (not ? ' IS NOT ' : ' IS ');
+  const val = value != null ? key : 'NULL';
 
   this._conditions.push({
-    operator: 'AND',
-    expression: name + '=' + key,
-  });
-}
-
-UpdateQueryModel.prototype.addOrCondition = function (name, value) {
-  const key = '$' + (Object.keys(this._values).length + 1);
-  this._values[key] = value;
-
-  this._conditions.push({
-    operator: 'OR',
-    condition: name + '=' + key,
+    operator: operator,
+    expression: name + comparison + val,
   });
 }
 

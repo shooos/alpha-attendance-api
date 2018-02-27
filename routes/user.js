@@ -13,7 +13,7 @@ module.exports = (accessor) => {
     const body = req.body;
 
     const selectQuery = new SelectQuery(memberModel);
-    selectQuery.addAndCondition('id', body.id);
+    selectQuery.addCondition('AND', 'id', body.id);
 
     const members = await accessor.execute(selectQuery).catch((err) => {
       logger.error.error(err);
@@ -38,10 +38,18 @@ module.exports = (accessor) => {
 
   router.post('/login', async (req, res) => {
     const body = req.body;
-    if (body) res.send({error: true, message: 'Who are you?'});
+    if (!body) return res.send({error: true, message: 'Who are you?'});
 
     await authenticator.login(body.id, body.password, body.host); // リクエスト元のホスト知りたいときはどうするの
-    res.send(req.body);
+    return res.send();
+  });
+
+  router.post('/logout', async (req, res) => {
+    const body = req.body;
+    if (!body) res.send({error: true, message: 'Who are you?'});
+
+    await authenticator.logout(body.id, body.token, body.host);
+    return res.send();
   });
 
   return router;
