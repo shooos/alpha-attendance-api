@@ -15,7 +15,7 @@ module.exports = {
       type: 'string',
       length: 255,
     },
-    host: {
+    client: {
       type: 'string',
       length: 64,
     },

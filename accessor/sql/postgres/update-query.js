@@ -1,9 +1,9 @@
-const logger = require('../../../system/logger');
+const camel2snake = require('../../../system/camel2snake');
 
 const UpdateQueryModel = function (model) {
   this._model = model;
   this._tableName = model.name;
-  this._columns = Object.keys(model.columns);
+  this._columns = Object.keys(model.columns).map((name) => camel2snake(name));
   this._updates = [];
   this._conditions = [];
   this._values = {};

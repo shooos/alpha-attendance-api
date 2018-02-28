@@ -9,7 +9,10 @@ const Postgres = function() {
 Postgres.prototype._executeQuery = async function(queries) {
   if (!queries || !queries.length) return;
 
-  const client = await this._pool.connect();
+  const client = await this._pool.connect().catch((err) => {
+    logger.error.error(err);
+    throw new Error('Connection Failed');
+  });
   let results = [];
 
   try {
@@ -24,9 +27,17 @@ Postgres.prototype._executeQuery = async function(queries) {
         }
 
         const result = await client.query(query);
-        results.push(result.rows);
+        switch (result.command) {
+        case 'INSERT':
+        case 'UPDATE':
+          results.push(result.rowCount);
+        case 'SELECT':
+          results.push(result.rows);
+        default:
+          results.push(result);
+        }
 
-        logger.system.info('Query result:', result.rows);
+        logger.system.info(result);
       }
     } catch (err) {
       await client.query('ROLLBACK');

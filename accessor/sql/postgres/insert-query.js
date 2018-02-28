@@ -1,7 +1,9 @@
+const camel2snake = require('../../../system/camel2snake');
+
 const InsertQueryModel = function (model) {
   this._model = model;
   this._tableName = model.name;
-  this._columns = Object.keys(model.columns);
+  this._columns = Object.keys(model.columns).map((name) => camel2snake(name));
   this._values = {};
 }
 

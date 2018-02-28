@@ -33,23 +33,30 @@ module.exports = (accessor) => {
       return res.send({error: true, message: err});
     });
 
-    return res.send('Registerd.');
+    return res.send({data: true});
   });
 
   router.post('/login', async (req, res) => {
     const body = req.body;
     if (!body) return res.send({error: true, message: 'Who are you?'});
 
-    await authenticator.login(body.id, body.password, body.host); // リクエスト元のホスト知りたいときはどうするの
-    return res.send();
+    const client = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    const token = await authenticator.login(body.id, body.password, client).catch((err) => {
+      logger.error.error(err);
+      return res.send({error: true, message: err.message});
+    });
+
+    return res.send({data: {token: token}});
   });
 
   router.post('/logout', async (req, res) => {
     const body = req.body;
     if (!body) res.send({error: true, message: 'Who are you?'});
 
-    await authenticator.logout(body.id, body.token, body.host);
-    return res.send();
+    const client = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    const result = await authenticator.logout(body.id, body.token, client);
+    if (!result) return res.send({error: true, message: 'Logout failed.'});
+    return res.send({data: true});
   });
 
   return router;

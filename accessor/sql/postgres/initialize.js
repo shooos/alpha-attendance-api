@@ -1,10 +1,12 @@
+const camel2snake = require('../../../system/camel2snake');
+
 const createQuery = (model) => {
   let columns = [];
   let primaryKeys = [];
 
   Object.keys(model.columns).forEach((name) => {
     const column = model.columns[name];
-    const columnName = name.replace(/[A-Z]/g, upperToUnderscoreLower);
+    const columnName = camel2snake(name);
     const type = resolveType(column);
     const definition = [columnName, type];
 
@@ -33,10 +35,6 @@ const resolveType = (column) => {
   case 'datetime':
     return 'TIMESTAMP WITHOUT TIME ZONE';
   }
-}
-
-const upperToUnderscoreLower = (match) => {
-  return '_' + match.toLowerCase();
 }
 
 module.exports = function(models) {
