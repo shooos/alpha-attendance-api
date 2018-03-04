@@ -19,5 +19,9 @@ module.exports = {
       type: 'string',
       length: 64,
     },
+    admin: {
+      type: 'boolean',
+      notNull: true,
+    }
   },
 }

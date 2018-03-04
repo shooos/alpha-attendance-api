@@ -1,3 +1,4 @@
+const moment = require('moment');
 const camel2snake = require('../../../system/camel2snake');
 
 const InsertQueryModel = function (model) {
@@ -7,9 +8,15 @@ const InsertQueryModel = function (model) {
   this._values = {};
 }
 
-InsertQueryModel.prototype.appendValues = function (values) {
+InsertQueryModel.prototype.setValues = function (values, authUser) {
   for (let column of this._columns) {
-    const value = values[column] != null ? values[column] : null;
+    let value = values[column] != null ? values[column] : null;
+    if (column === 'create_user') {
+      value = authUser;
+    } else if (column === 'create_date') {
+      value = moment().utc();
+    }
+
     this._values['$' + (Object.keys(this._values).length + 1)] = value;
   }
 }
@@ -19,6 +26,10 @@ InsertQueryModel.prototype.getQuery = function () {
     text: 'INSERT INTO ' + this._tableName + ' (' + this._columns.join(', ') + ') VALUES (' + Object.keys(this._values).join(', ') + ');',
     values: Object.keys(this._values).map((key) => this._values[key]),
   };
+}
+
+InsertQueryModel.prototype.formatResult$ = function (rows) {
+  // DO NOTHING
 }
 
 module.exports = InsertQueryModel;

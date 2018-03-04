@@ -3,7 +3,7 @@ const commonInfo = require('./common-info');
 module.exports = {
   name: 'estimate_time',
   columns: Object.assign({
-    id: {
+    estimateId: {
       type: 'string',
       length: 16,
       key: true,
@@ -12,10 +12,12 @@ module.exports = {
       type: 'string',
       length: 16,
       notNull: true,
+      unique: 'member_date',
     },
     date: {
       type: 'date',
       notNull: true,
+      unique: 'member_date',
     },
     startTime: {
       type: 'time',

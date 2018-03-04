@@ -3,18 +3,22 @@ const commonInfo = require('./common-info');
 module.exports = {
   name: 'actual_time_detail',
   columns: Object.assign({
-    id: {
-      type: 'string',
-      length: 16,
-      key: true,
-    },
-    actualTimeId: {
+    actualId: {
       type: 'string',
       length: 16,
       reference: {
         table: 'actual_time',
-        column: 'id',
+        column: 'actual_id',
       },
+      key: true,
+    },
+    beginTime: {
+      type: 'time',
+      unique: true,
+      key: true,
+    },
+    finishTime: {
+      type: 'time',
     },
     situation: {
       type: 'string',
@@ -27,12 +31,6 @@ module.exports = {
     pCode: {
       type: 'string',
       length: 16,
-    },
-    startTime: {
-      type: 'time',
-    },
-    endTime: {
-      type: 'time',
     },
   }, commonInfo),
 }

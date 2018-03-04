@@ -1,38 +1,27 @@
 const Router = require('express-promise-router');
 const router = new Router();
 const logger = require('../system/logger');
-const InsertQuery = require('../accessor/sql/postgres/insert-query');
-const SelectQuery = require('../accessor/sql/postgres/select-query');
-const memberModel = require('../accessor/model/member');
 const Authenticator = require('../system/authenticator');
+const MSG = require('../config/message/system-messages.json');
+
+/* Models */
+const memberModel = require('../accessor/model/member');
 
 module.exports = (accessor) => {
   const authenticator = new Authenticator(accessor);
 
   router.post('/register', async (req, res) => {
     const body = req.body;
-
-    const selectQuery = new SelectQuery(memberModel);
-    selectQuery.addCondition('AND', 'id', body.id);
-
-    const members = await accessor.execute(selectQuery).catch((err) => {
-      logger.error.error(err);
-      return res.send({error: true, message: err});
-    });
-    const isExists = !!(members).length;
-    if (isExists) {
-      const msg = body.id + ' already exsists';
-      logger.system.warn(msg);
-      return res.send({error: true, message: msg});
+    if (!body) {
+      logger.error.error(MSG.BODY_PARAMS_REQUIRED);
+      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
     }
 
-    const insertQuery = new InsertQuery(memberModel);
-    insertQuery.appendValues({id: body.id, password: body.password});
-    await accessor.execute(insertQuery).catch((err) => {
-      logger.error.error(err);
-      return res.send({error: true, message: err});
-    });
-
+    await authenticator.register(body.id, body.password, false)
+      .catch((err) => {
+        logger.error.error(err);
+        return res.send({error: true, message: err.message});
+      });
     return res.send({data: true});
   });
 

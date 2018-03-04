@@ -95,8 +95,12 @@ Postgres.prototype.execute = async function(queryModels) {
   });
 
   if (Array.isArray(queryModels)) {
+    for (let i = 0, length = results.length; i < length; i++) {
+      queryModels[i].formatResult$(results[i]);
+    }
     return results;
   } else {
+    queryModels.formatResult$(results[0]);
     return results[0];
   }
 };

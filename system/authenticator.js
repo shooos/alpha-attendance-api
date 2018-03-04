@@ -1,11 +1,30 @@
-const SelectQuery = require('../accessor/sql/postgres/select-query');
-const UpdateQuery = require('../accessor/sql/postgres/update-query');
 const memberModel = require('../accessor/model/member');
 const uniqid = require('uniqid');
 const logger = require('../system/logger');
 
+/* Queries */
+const SelectQuery = require('../accessor/sql/postgres/select-query');
+const UpdateQuery = require('../accessor/sql/postgres/update-query');
+const InsertQuery = require('../accessor/sql/postgres/insert-query');
+
 const Authenticator = function (accessor) {
   this._accessor = accessor;
+}
+
+Authenticator.prototype.register = async function (id, password, admin) {
+  const selectQuery = new SelectQuery(memberModel);
+  selectQuery.addCondition('AND', 'id', id);
+
+  const members = await this._accessor.execute(selectQuery);
+
+  const isExists = !!(members).length;
+  if (isExists) {
+    throw new Error(id + ' already exsists');
+  }
+
+  const insertQuery = new InsertQuery(memberModel);
+  insertQuery.setValues({id: id, password: password, admin: admin});
+  await this._accessor.execute(insertQuery);
 }
 
 Authenticator.prototype.login = async function (id, password, client) {

@@ -1,3 +1,4 @@
+const moment = require('moment');
 const camel2snake = require('../../../system/camel2snake');
 
 const UpdateQueryModel = function (model) {
@@ -9,16 +10,29 @@ const UpdateQueryModel = function (model) {
   this._values = {};
 }
 
-UpdateQueryModel.prototype.setUpdateValues = function (values) {
+UpdateQueryModel.prototype.setUpdateValues = function (values, authUser) {
+  // 更新ユーザ
+  if (this._columns.indexOf('update_user') !== -1 && authUser) {
+    const key = this.generateValueKey();
+    this._values[key] = authUser;
+    this._updates.push('update_user = ' + key);
+  }
+  // 更新日時
+  if (this._columns.indexOf('update_date') !== -1) {
+    const key = this.generateValueKey();
+    this._values[key] = moment().utc();
+    this._updates.push('update_date = ' + key);
+  }
+
   Object.keys(values).forEach((name) => {
-    const key = '$' + (Object.keys(this._values).length + 1);
+    const key = this.generateValueKey();
     this._values[key] = values[name];
     this._updates.push(name + '=' + key);
   });
 }
 
 UpdateQueryModel.prototype.addCondition = function (operator, name, value, not) {
-  const key = '$' + (Object.keys(this._values).length + 1);
+  const key = this.generateValueKey();
   if (value != null) {
     this._values[key] = value;
   }
@@ -46,6 +60,14 @@ UpdateQueryModel.prototype.getQuery = function () {
     text: 'UPDATE ' + this._model.name + ' SET ' + this._updates.join(', ') + ' WHERE ' + condition,
     values: Object.keys(this._values).map((key) => this._values[key]),
   };
+}
+
+UpdateQueryModel.prototype.generateValueKey = function () {
+  return '$' + (Object.keys(this._values).length + 1);
+}
+
+UpdateQueryModel.prototype.formatResult$ = function (rows) {
+  // DO NOTHING
 }
 
 module.exports = UpdateQueryModel;
