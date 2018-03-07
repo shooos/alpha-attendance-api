@@ -9,7 +9,7 @@ module.exports = {
       key: true,
       reference: {
         table: 'work_pattern',
-        column: 'id',
+        column: 'work_pattern_id',
       },
     },
     startTime: {

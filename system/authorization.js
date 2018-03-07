@@ -14,7 +14,7 @@ module.exports = function (accessor) {
     } else {
       const token = auth.split(' ').pop();
       const memberId = await authenticator.authenticate(token, client).catch((err) => {
-        logger.error.error(err);
+        logger.error.error('Authentication Failure', err);
         return res.status(401).send({error: true, message: 'Authentication Failure'});
       });
       if (memberId == null) {

@@ -57,7 +57,7 @@ UpdateQueryModel.prototype.getQuery = function () {
   }
 
   return {
-    text: 'UPDATE ' + this._model.name + ' SET ' + this._updates.join(', ') + ' WHERE ' + condition,
+    text: 'UPDATE ' + this._model.name + ' SET ' + this._updates.join(', ') + ' WHERE ' + condition + '  RETURNING *;',
     values: Object.keys(this._values).map((key) => this._values[key]),
   };
 }

@@ -6,15 +6,10 @@ module.exports = {
     actualId: {
       type: 'string',
       length: 16,
-      reference: {
-        table: 'actual_time',
-        column: 'actual_id',
-      },
       key: true,
     },
     beginTime: {
       type: 'time',
-      unique: true,
       key: true,
     },
     finishTime: {

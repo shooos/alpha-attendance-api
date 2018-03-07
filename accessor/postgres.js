@@ -27,16 +27,7 @@ Postgres.prototype._executeQuery = async function(queries) {
         }
 
         const result = await client.query(query);
-        switch (result.command) {
-        case 'INSERT':
-        case 'UPDATE':
-          results.push(result.rowCount);
-        case 'SELECT':
-          results.push(result.rows);
-        default:
-          results.push(result);
-        }
-
+        results.push(result.rows);
         logger.system.info(result);
       }
     } catch (err) {

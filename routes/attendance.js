@@ -6,18 +6,9 @@ const authorization = require('../system/authorization');
 const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
 
-/* Queries */
-const InsertQuery = require('../accessor/sql/postgres/insert-query');
-const UpdateQuery = require('../accessor/sql/postgres/update-query');
-const SelectQuery = require('../accessor/sql/postgres/select-query');
-
-/* Models */
-const estimateTimeModel = require('../accessor/model/estimate-time');
-const estimateUnclaimedModel = require('../accessor/model/estimate-unclaimed-time');
-const actualTimeModel = require('../accessor/model/actual-time');
-const actualDetailModel = require('../accessor/model/actual-time-detail');
-
 module.exports = (accessor) => {
+  const actualService = require('../service/actual-time-service')(accessor);
+
   /**
    * 認証処理
    */
@@ -39,38 +30,6 @@ module.exports = (accessor) => {
       return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED});
     }
 
-    const updateQuery = new UpdateQuery(estimateTimeModel);
-    updateQuery.addCondition('AND', 'estimate_id', body.estimateId);
-    updateQuery.setValues({
-      date: body.date,
-      start_time: body.startTime,
-      end_time: body.endTime,
-    }, authUser);
-
-    const updateResult = await accessor.execute(updateQuery);
-
-    // 更新対象がなかったら挿入
-    if (updateResult === 0) {
-      const insertQuery = new InsertQuery(estimateTimeModel);
-      const values = createValuesObject(estimateTimeModel, body);
-      values.estimate_id = uniqid();
-      insertQuery.setValues(values, authUser);
-
-      await accessor.execute(insertQuery);
-    }
-
-    for (let record of body.detail) {
-      const updateUnclaimed = new UpdateQuery(estimateUnclaimedModel);
-      updateUnclaimed.addCondition('AND', 'estimate_id', body.estimateId);
-      updateUnclaimed.addCondition('AND', 'begin_time', record.beginTime);
-      const updateResult = await accessor.execute(updateUnclaimed);
-
-      if (updateResult === 0) {
-        const insertUnclaimed = new InsertQuery(estimateUnclaimedModel);
-        insertUnclaimed.setValues();
-      }
-    }
-
     return res.send({data: true});
   });
 
@@ -87,12 +46,6 @@ module.exports = (accessor) => {
     const year = req.params.year || (current.getFullYear());
     const month = req.params.month || (current.getMonth() + 1);
 
-    const selectQuery = new SelectQuery(estimateTimeModel);
-    selectQuery.addCondition('AND', 'member_id', req.params.memberId);
-    selectQuery.addCondition('AND', 'EXTRACT(YEAR FROM date)', year);
-    selectQuery.addCondition('AND', 'EXTRACT(MONTH FROM date)', month);
-    const results = await accessor.execute(selectQuery);
-
     return res.send({data: results});
   });
 
@@ -106,10 +59,6 @@ module.exports = (accessor) => {
     }
 
     const date = new Date() || req.params.date;
-    const selectQuery = new SelectQuery(estimateTimeModel);
-    selectQuery.addCondition('AND', 'member_id', req.params.memberId);
-    selectQuery.addCondition('AND', 'date', date);
-    const results = await accessor.execute(selectQuery);
 
     return res.send({data: results[0]});
   });
@@ -123,6 +72,10 @@ module.exports = (accessor) => {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
       return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
     }
+    if (!Array.isArray(body.detail)) {
+      logger.error.error('Parameter [detail] is required');
+      return res.send({error: true, message: 'Parameter [detail] is required'});
+    }
 
     const authUser = req.authUser;
     if (authUser !== body.memberId) {
@@ -130,29 +83,20 @@ module.exports = (accessor) => {
       return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED});
     }
 
-    if (body.actualId != null) {
-      const updateQuery = new UpdateQuery(actualTimeModel);
-      updateQuery.addCondition('AND', 'actual_id', body.actualId);
-      updateQuery.setUpdateValues({
-        work_pattern: body.workPattern,
-        start_time: body.startTime,
-        end_time: body.endTime,
-        duty_hours: body.dutyHours,
-        night_hours: body.nightHours,
-        semi_absence_hours: body.semiAbsenceHours,
-      }, authUser);
+    const record = await actualService.getActualTime(body.memberId, {
+      date: body.date,
+    });
+    const results = await actualService.registerActualTime({
+      actualId: record.length ? record[0].actualId : null,
+      memberId: body.memberId,
+      date: body.date,
+      workPattern: body.workPattern,
+      detail: body.detail,
+    });
 
-      accessor.execute(updateQuery);
-    } else {
-      const insertQuery = new InsertQuery(actualTimeModel);
-      const values = createValuesObject(actualTimeModel, body);
-      values.actual_id = uniqid();
-      insertQuery.setValues(values, authUser);
-
-      accessor.execute(insertQuery);
-    }
-
-    return res.send({data: true});
+    return res.send({data: {
+      actualId: results[0][0].actualId
+    }});
   });
 
   /**
@@ -168,11 +112,7 @@ module.exports = (accessor) => {
     const year = req.params.year || (current.getFullYear());
     const month = req.params.month || (current.getMonth() + 1);
 
-    const selectQuery = new SelectQuery(actualTimeModel);
-    selectQuery.addCondition('AND', 'member_id', req.params.memberId);
-    selectQuery.addCondition('AND', 'EXTRACT(YEAR FROM date)', year);
-    selectQuery.addCondition('AND', 'EXTRACT(MONTH FROM date)', month);
-    const results = await accessor.execute(selectQuery);
+
 
     return res.send({data: results});
   });
@@ -187,10 +127,6 @@ module.exports = (accessor) => {
     }
 
     const date = new Date() || req.params.date;
-    const selectQuery = new SelectQuery(actualTimeModel);
-    selectQuery.addCondition('AND', 'member_id', req.params.memberId);
-    selectQuery.addCondition('AND', 'date', date);
-    const results = await accessor.execute(selectQuery);
 
     return res.send({data: results[0]});
   });

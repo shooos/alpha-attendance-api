@@ -23,7 +23,7 @@ InsertQueryModel.prototype.setValues = function (values, authUser) {
 
 InsertQueryModel.prototype.getQuery = function () {
   return {
-    text: 'INSERT INTO ' + this._tableName + ' (' + this._columns.join(', ') + ') VALUES (' + Object.keys(this._values).join(', ') + ');',
+    text: 'INSERT INTO ' + this._tableName + ' (' + this._columns.join(', ') + ') VALUES (' + Object.keys(this._values).join(', ') + ') RETURNING *;',
     values: Object.keys(this._values).map((key) => this._values[key]),
   };
 }

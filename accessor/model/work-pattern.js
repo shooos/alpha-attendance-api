@@ -3,7 +3,7 @@ const commonInfo = require('./common-info');
 module.exports = {
   name: 'work_pattern',
   columns: Object.assign({
-    id: {
+    workPatternId: {
       type: 'string',
       length: 16,
       key: true,
