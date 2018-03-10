@@ -42,9 +42,10 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) res.send({error: true, message: 'Who are you?'});
 
-    const client = req.header('x-forwarded-for') || req.connection.remoteAddress;
-    const result = await authenticator.logout(body.id, body.token, client);
-    if (!result) return res.send({error: true, message: 'Logout failed.'});
+    const result = await authenticator.logout(body.id);
+    if (!result) {
+      return res.send({error: true, message: 'Logout failed.'});
+    }
     return res.send({data: true});
   });
 

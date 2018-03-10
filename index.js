@@ -7,6 +7,7 @@ app.use(bodyParser.json());
 app.use(logger.express);
 
 const Accessor = require('./accessor/postgres');
+const Authenticator = require('./system/authenticator');
 const attendanceAPI = require('./routes/attendance');
 const userAPI = require('./routes/user');
 const workPatternAPI = require('./routes/work-pattern');
@@ -14,7 +15,10 @@ const workPatternAPI = require('./routes/work-pattern');
 const accessor = new Accessor();
 
 accessor.initialize()
-.then(() => {
+.then(async () => {
+  const authenticator = new Authenticator(accessor);
+  await authenticator.initialize();
+
   app.use('/attendance', attendanceAPI(accessor));
   app.use('/user', userAPI(accessor));
   app.use('/workPattern', workPatternAPI(accessor));

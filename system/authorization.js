@@ -13,15 +13,16 @@ module.exports = function (accessor) {
       return res.status(401).send({error: true, message: 'Authorization Required'});
     } else {
       const token = auth.split(' ').pop();
-      const memberId = await authenticator.authenticate(token, client).catch((err) => {
+      const member = await authenticator.authenticate(token, client).catch((err) => {
         logger.error.error('Authentication Failure', err);
         return res.status(401).send({error: true, message: 'Authentication Failure'});
       });
-      if (memberId == null) {
+      if (member.memberId == null) {
         return res.status(401).send({error: true, message: 'Authentication Failure'});
       }
 
-      req.authUser = memberId;
+      req.authUser = member.memberId;
+      req.newToken = member.token;
     }
     next();
   };

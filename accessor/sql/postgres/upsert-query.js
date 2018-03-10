@@ -6,8 +6,10 @@ const UpsertQueryModel = function (model) {
   this._tableName = model.name;
   this._columns = Object.keys(model.columns).map((name) => camel2snake(name));
   this._values = {};
-  this._updateValues = {};
   this._updates = [];
+  this._uniqueColumns = Object.keys(model.columns)
+    .filter((name) => (model.columns[name].key || !!model.columns[name].unique))
+    .map((name) => camel2snake(name));
 }
 
 UpsertQueryModel.prototype.setValues = function (values, authUser) {
@@ -22,11 +24,11 @@ UpsertQueryModel.prototype.setValues = function (values, authUser) {
       this._values[key] = moment().utc();
       break;
     case 'update_user':
-      this._updateValues = authUser;
+      this._values[key] = authUser;
       this._updates.push(column + '=' + key);
       break;
     case 'update_date':
-      this._updateValues = moment().utc();
+      this._values[key] = moment().utc();
       this._updates.push(column + '=' + key);
       break;
     default:
@@ -42,23 +44,20 @@ UpsertQueryModel.prototype.getQuery = function () {
   query.push('INSERT INTO ' + this._tableName);
   query.push('(' + this._columns.join(', ') + ')');
   query.push('VALUES (' + Object.keys(this._values).join(', ') + ')');
-  query.push('ON CONFLICT ON CONSTRAINT');
-  query.push('UPDATE SET ' + this._updates.join(', '));
+  query.push('ON CONFLICT (' + this._uniqueColumns.join(', ') + ') DO UPDATE');
+  query.push('SET ' + this._updates.join(', '));
   query.push('RETURNING *');
 
-  const values = Object.assign(this._values, this._updateValues);
+  const values = Object.keys(this._values)
+    .sort((a, b) => a.substr(1) - b.substr(1))
+    .map((key) => this._values[key]);
+
   return {
     text: query.join(' '),
-    values: Object.keys(values)
-      .sort((a, b) => {
-        return (a.substr(1) + 0) > (b.substr(1) + 0);
-      })
-      .map((key) => values[key]),
+    values: values,
   };
 }
 
-UpsertQueryModel.prototype.formatResult$ = function (rows) {
-  // DO NOTHING
-}
+UpsertQueryModel.prototype.formatResult$ = require('./result-formatter');
 
 module.exports = UpsertQueryModel;

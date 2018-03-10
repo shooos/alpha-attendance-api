@@ -1,7 +1,7 @@
 module.exports = {
   name: 'member',
   columns: {
-    id: {
+    memberId: {
       type: 'string',
       length: 16,
       key: true,
@@ -18,6 +18,9 @@ module.exports = {
     client: {
       type: 'string',
       length: 64,
+    },
+    authTime: {
+      type: 'datetime',
     },
     admin: {
       type: 'boolean',

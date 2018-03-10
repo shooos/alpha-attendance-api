@@ -47,17 +47,27 @@ UpdateQueryModel.prototype.addCondition = function (operator, name, value, not) 
 }
 
 UpdateQueryModel.prototype.getQuery = function () {
-  let condition;
-  for (let cond of this._conditions) {
-    if (!condition) {
-      condition = cond.expression;
-    } else {
-      condition += (' ' + cond.operator + ' ' + cond.expression);
+  const query = [];
+  query.push('UPDATE');
+  query.push(this._model.name);
+  query.push('SET');
+  query.push(this._updates.join(', '));
+  if (this._conditions.length) {
+    let condition = '';
+    for (let cond of this._conditions) {
+      if (!condition) {
+        condition = cond.expression;
+      } else {
+        condition += (' ' + cond.operator + ' ' + cond.expression);
+      }
     }
+    query.push('WHERE');
+    query.push(condition);
   }
+  query.push('RETURNING *');
 
   return {
-    text: 'UPDATE ' + this._model.name + ' SET ' + this._updates.join(', ') + ' WHERE ' + condition + '  RETURNING *;',
+    text: query.join(' '),
     values: Object.keys(this._values).map((key) => this._values[key]),
   };
 }
@@ -66,8 +76,6 @@ UpdateQueryModel.prototype.generateValueKey = function () {
   return '$' + (Object.keys(this._values).length + 1);
 }
 
-UpdateQueryModel.prototype.formatResult$ = function (rows) {
-  // DO NOTHING
-}
+UpdateQueryModel.prototype.formatResult$ = require('./result-formatter');
 
 module.exports = UpdateQueryModel;

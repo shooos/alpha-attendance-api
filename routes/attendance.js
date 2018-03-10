@@ -1,7 +1,6 @@
 const Router = require('express-promise-router');
 const router = new Router();
 const logger = require('../system/logger');
-const uniqid = require('uniqid');
 const authorization = require('../system/authorization');
 const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
@@ -21,16 +20,16 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
-      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED, token: req.newToken});
     }
 
     const authUser = req.authUser;
     if (authUser !== body.memberId) {
       logger.error.error(MSG.UPDATE_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED});
+      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED, token: req.newToken});
     }
 
-    return res.send({data: true});
+    return res.send({token: req.newToken, data: true});
   });
 
   /**
@@ -39,14 +38,14 @@ module.exports = (accessor) => {
   router.get('/estimates/:memberId/:year?/:month?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED});
+      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
     }
 
     const current = new Date();
     const year = req.params.year || (current.getFullYear());
     const month = req.params.month || (current.getMonth() + 1);
 
-    return res.send({data: results});
+    return res.send({token: req.newToken, data: results});
   });
 
   /**
@@ -55,12 +54,12 @@ module.exports = (accessor) => {
   router.get('/estimate/:memberId/:date?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED});
+      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
     }
 
     const date = new Date() || req.params.date;
 
-    return res.send({data: results[0]});
+    return res.send({token: req.newToken, data: results[0]});
   });
 
   /**
@@ -70,32 +69,32 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
-      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED, token: req.newToken});
     }
     if (!Array.isArray(body.detail)) {
       logger.error.error('Parameter [detail] is required');
-      return res.send({error: true, message: 'Parameter [detail] is required'});
+      return res.send({error: true, message: 'Parameter [detail] is required', token: req.newToken});
     }
 
     const authUser = req.authUser;
     if (authUser !== body.memberId) {
       logger.error.error(MSG.UPDATE_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED});
+      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED, token: req.newToken});
     }
 
     const record = await actualService.getActualTime(body.memberId, {
       date: body.date,
     });
-    const results = await actualService.registerActualTime({
-      actualId: record.length ? record[0].actualId : null,
+    const actualId = await actualService.registerActualTime(authUser, {
       memberId: body.memberId,
       date: body.date,
+      actualId: record.length ? record[0].actual_id : null,
       workPattern: body.workPattern,
       detail: body.detail,
     });
 
-    return res.send({data: {
-      actualId: results[0][0].actualId
+    return res.send({token: req.newToken, data: {
+      actualId: actualId,
     }});
   });
 
@@ -105,16 +104,15 @@ module.exports = (accessor) => {
   router.get('/actuals/:memberId/:year?/:month?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED});
+      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
     }
 
     const current = new Date();
-    const year = req.params.year || (current.getFullYear());
-    const month = req.params.month || (current.getMonth() + 1);
-
-
-
-    return res.send({data: results});
+    const results = await actualService.getActualTime(req.authUser, {
+      year: req.params.year || (current.getFullYear()),
+      month: req.params.month || (current.getMonth() + 1),
+    });
+    return res.send({token: req.newToken, data: results});
   });
 
   /**
@@ -123,12 +121,13 @@ module.exports = (accessor) => {
   router.get('/actual/:memberId/:date?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED});
+      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
     }
 
-    const date = new Date() || req.params.date;
-
-    return res.send({data: results[0]});
+    const results = await actualService.getActualTime(req.authUser, {
+      date: req.params.date || new Date(),
+    });
+    return res.send({token: req.newToken, data: results[0]});
   });
 
   return router;

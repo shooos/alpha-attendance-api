@@ -1,4 +1,7 @@
 {
+  "authentication": {
+    "effectiveTime": 1800000
+  },
   "adminUser": {
     "userId": "admin",
     "password": "admin"

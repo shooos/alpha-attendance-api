@@ -3,21 +3,20 @@ const commonInfo = require('./common-info');
 module.exports = {
   name: 'actual_time',
   columns: Object.assign({
-    actualId: {
-      type: 'string',
-      length: 16,
-      key: true,
-    },
     memberId: {
       type: 'string',
       notNull: true,
       length: 16,
-      unique: 'member_date',
+      key: true,
     },
     date: {
       type: 'date',
       notNull: true,
-      unique: 'member_date',
+      key: true,
+    },
+    actualId: {
+      type: 'string',
+      length: 16,
     },
     workPattern: {
       type: 'string',
@@ -30,12 +29,6 @@ module.exports = {
       type: 'time',
     },
     dutyHours: {
-      type: 'hours',
-    },
-    nightHours: {
-      type: 'hours',
-    },
-    semiAbsenceHours: {
       type: 'hours',
     },
   }, commonInfo),

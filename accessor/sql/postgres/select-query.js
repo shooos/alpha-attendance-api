@@ -28,11 +28,11 @@ SelectQueryModel.prototype.addCondition = function (operator, name, value, not) 
 }
 
 SelectQueryModel.prototype.naturalLeftOuterJoin = function (innerTableModel) {
-  this._join('NATURAL LEFT OUTER JOIN', innerTableModel);
+  this._naturalJoin('NATURAL LEFT OUTER JOIN', innerTableModel);
 }
 
 SelectQueryModel.prototype.naturalInnerJoin = function (innerTableModel) {
-  this._join('NATURAL INNER JOIN', outerTableModel, innerTableModel);
+  this._naturalJoin('NATURAL INNER JOIN', innerTableModel);
 }
 
 SelectQueryModel.prototype._naturalJoin = function (joinRule, innerTableModel) {
@@ -40,38 +40,30 @@ SelectQueryModel.prototype._naturalJoin = function (joinRule, innerTableModel) {
 }
 
 SelectQueryModel.prototype.getQuery = function () {
-  let condition;
-  for (let cond of this._conditions) {
-    if (!condition) {
-      condition = cond.expression;
-    } else {
-      condition += (' ' + cond.operator + ' ' + cond.expression);
+  const query = [];
+  query.push('SELECT');
+  query.push(this._columns.join(', '));
+  query.push('FROM');
+  query.push(this._model.name);
+  if (this._conditions.length) {
+    let condition = '';
+    for (let cond of this._conditions) {
+      if (!condition) {
+        condition = cond.expression;
+      } else {
+        condition += (' ' + cond.operator + ' ' + cond.expression);
+      }
     }
+    query.push('WHERE');
+    query.push(condition);
   }
 
   return {
-    text: 'SELECT ' + this._columns.join(', ') + ' FROM ' + this._model.name + ' WHERE ' + condition,
+    text: query.join(' '),
     values: Object.keys(this._values).map((key) => this._values[key]),
   };
 }
 
-SelectQueryModel.prototype.formatResult$ = function (rows) {
-  for (let row of rows) {
-    for (let columnName of Object.keys(row)) {
-      if (row[columnName] == null) break;
-
-      const type = this._model.columns[snake2camel(columnName)].type;
-      switch (type) {
-      case 'date':
-        row[columnName] = moment(row[columnName]).format('YYYY-MM-DD');
-        break;
-      case 'datetime':
-        row[columnName] = moment(row[columnName]);
-      default:
-        // DO NOTHING
-      }
-    }
-  }
-}
+SelectQueryModel.prototype.formatResult$ = require('./result-formatter');
 
 module.exports = SelectQueryModel;

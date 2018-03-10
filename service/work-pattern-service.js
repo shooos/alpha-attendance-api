@@ -1,51 +1,83 @@
+const moment = require('moment');
 const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
+const logger = require('../system/logger');
 
 /* Queries */
-const InsertQuery = require('../accessor/sql/postgres/insert-query');
-const UpdateQuery = require('../accessor/sql/postgres/update-query');
 const SelectQuery = require('../accessor/sql/postgres/select-query');
+const UpsertQuery = require('../accessor/sql/postgres/upsert-query');
 
 /* Models */
 const workPatternModel = require('../accessor/model/work-pattern');
 const workingHoursModel = require('../accessor/model/working-hours');
 
-module.exports = async (accessor) => {
-  const registerWorkPattern = async (data) => {
-    const values = createValuesObject(data);
+module.exports = (accessor) => {
+  const workPatternCache = {};
 
-    // 一度更新を試みる
-    const updateQuery = new UpdateQuery(workPatternModel);
-    updateQuery.setUpdateValues(values);
-    updateQuery.addCondition('work_pattern_id', data.workPatternId);
-    const updateResult = await accessor.execute(updateQuery);
+  /**
+   * 業務区分の登録・更新
+   */
+  const registerWorkPattern = async (authUser, data) => {
+    logger.system.info('work-pattern-service#registerWorkPattern', data);
 
-    if (updateResult.length === 0) {
-      // 更新対象がなかったら挿入
-      const insertQuery = new InsertQuery(workPatternModel);
-      insertQuery.setValues(values);
-      return await accessor.execute(insertQuery);
-    } else {
-      return updateResult;
+    const queries = [];
+    const upsertPattern = new UpsertQuery(workPatternModel);
+    const values = createValuesObject(workPatternModel, data);
+    upsertPattern.setValues(values, authUser);
+    queries.push(upsertPattern);
+
+    for (let record of data.hours) {
+      const upsertHour = new UpsertQuery(workingHoursModel);
+      const values = createValuesObject(workingHoursModel, record);
+      upsertHour.setValues(values, authUser);
+      queries.push(upsertHour);
     }
+
+    // 更新したらキャッシュを消す
+    delete workPatternCache[data.workPatternId];
+
+    const results = await accessor.execute(queries);
+    return results;
   }
 
-  const getWorkPattern = async () => {
+  /**
+   * 業務区分の取得
+   */
+  const getWorkPattern = async (workPatternId) => {
+    logger.system.info('work-pattern-service#getWorkPattern', workPatternId);
 
+    // キャッシュがあれば返す
+    if (workPatternCache[workPatternId] != null) {
+      return workPatternCache[workPatternId];
+    }
+
+    const selectQuery = new SelectQuery(workPatternModel);
+    selectQuery.addCondition('AND', 'work_pattern_id', workPatternId);
+    selectQuery.naturalInnerJoin(workingHoursModel);
+    const results = await accessor.execute(selectQuery);
+
+    // 一度取得したらキャッシュする
+    workPatternCache[workPatternId] = results;
+
+    return results;
   }
 
-  const registerWorkingHours = async () => {
-
-  }
-
-  const getWorkingHours = async () => {
-
+  /**
+   * 休憩時間を除外した勤務時間を計算する
+   */
+  const calcurateWorkingTime = async (startTime, endTime, workPattern) => {
+    const start = moment(startTime, 'HH:mm');
+    const end = moment(endTime, 'HH:mm');
+    const pattern = await getWorkPattern(workPattern);
+    console.log('===================================');
+    console.log('pattern: ', pattern);
+    console.log(start, end);
+    console.log('===================================');
   }
 
   return {
     registerWorkPattern: registerWorkPattern,
     getWorkPattern: getWorkPattern,
-    registerWorkingHours: registerWorkingHours,
-    getWorkingHours: getWorkingHours,
+    calcurateWorkingTime: calcurateWorkingTime,
   }
 }

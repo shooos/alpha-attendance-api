@@ -80,19 +80,19 @@ Postgres.prototype.execute = async function(queryModels) {
   if (queryModels == null) return;
 
   const queries = Array.isArray(queryModels) ? queryModels.map((queryModel) => queryModel.getQuery()) : [queryModels.getQuery()];
-  const results = await this._executeQuery(queries).catch((err) => {
+  const queryResults = await this._executeQuery(queries).catch((err) => {
     logger.error.error(err);
     throw err;
   });
 
   if (Array.isArray(queryModels)) {
-    for (let i = 0, length = results.length; i < length; i++) {
-      queryModels[i].formatResult$(results[i]);
+    const results = [];
+    for (let i = 0, length = queryResults.length; i < length; i++) {
+      results.push(queryModels[i].formatResult$(queryResults[i]));
     }
     return results;
   } else {
-    queryModels.formatResult$(results[0]);
-    return results[0];
+    return queryModels.formatResult$(queryResults[0]);
   }
 };
 

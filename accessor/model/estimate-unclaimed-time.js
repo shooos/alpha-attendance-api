@@ -6,10 +6,6 @@ module.exports = {
     estimateId: {
       type: 'string',
       length: 16,
-      reference: {
-        table: 'estimate_time',
-        column: 'estimate_id',
-      },
       key: true,
     },
     beginTime: {

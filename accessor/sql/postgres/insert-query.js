@@ -28,8 +28,6 @@ InsertQueryModel.prototype.getQuery = function () {
   };
 }
 
-InsertQueryModel.prototype.formatResult$ = function (rows) {
-  // DO NOTHING
-}
+InsertQueryModel.prototype.formatResult$ = require('./result-formatter');
 
 module.exports = InsertQueryModel;

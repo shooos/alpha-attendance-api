@@ -1,10 +1,10 @@
+const uniqid = require('uniqid');
+const moment = require('moment');
 const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
 const logger = require('../system/logger');
 
 /* Queries */
-const InsertQuery = require('../accessor/sql/postgres/insert-query');
-const UpdateQuery = require('../accessor/sql/postgres/update-query');
 const UpsertQuery = require('../accessor/sql/postgres/upsert-query');
 const SelectQuery = require('../accessor/sql/postgres/select-query');
 
@@ -12,13 +12,14 @@ const SelectQuery = require('../accessor/sql/postgres/select-query');
 const actualTimeModel = require('../accessor/model/actual-time');
 const actualDetailModel = require('../accessor/model/actual-time-detail');
 
-module.exports = async (accessor) => {
+module.exports = (accessor) => {
+  /* Serviceis */
+  const workPatternService = require('../service/work-pattern-service')(accessor);
 
   /**
    * 実稼働時間の登録・更新
-   * @param {*} data
    */
-  const registerActualTime = async (data) => {
+  const registerActualTime = async (authUser, data) => {
     logger.system.info('actual-time-service#registerActualTime', data);
 
     let startTime = '99:99';
@@ -27,20 +28,20 @@ module.exports = async (accessor) => {
       // 24時間形式の時刻であることを前提としている
       startTime = record.beginTime < startTime ? record.beginTime : startTime;
       endTime = record.finishTime > endTime ? record.finishTime : endTime;
-      // FIXME: dutyHours, nightHours, semiAbsenceHours を算出する
     }
+    await workPatternService.calcurateWorkingTime(startTime, endTime, data.workPattern);
+    const diff = moment.duration(moment(endTime, 'HH:mm').diff(moment(startTime, 'HH:mm')));
+    const dutyHours = diff.toISOString();
     const queries = [];
-    let actualId = data.actualId || uniqid();
+    const actualId = data.actualId || uniqid();
 
     const upsertActual = new UpsertQuery(actualTimeModel);
     const values = createValuesObject(actualTimeModel, data);
     values.actual_id = actualId;
     values.start_time = startTime;
     values.end_time = endTime;
-    // values.duty_hours = dutyHours;
-    // values.night_hours = nightHours;
-    // values.semi_absence_hours = semiAbsenceHours;
-    upsertActual.setValues(values);
+    values.duty_hours = dutyHours;
+    upsertActual.setValues(values, authUser);
     queries.push(upsertActual);
 
     // 詳細時間の更新・登録
@@ -48,19 +49,22 @@ module.exports = async (accessor) => {
       const upsertDetail = new UpsertQuery(actualDetailModel);
       const values = createValuesObject(actualDetailModel, record);
       values.actual_id = actualId;
-      upsertDetail.setValues(values);
+      upsertDetail.setValues(values, authUser);
       queries.push(upsertDetail);
     }
 
-    const results = await accessor.execute(queries);
-    return results;
+    await accessor.execute(queries);
+    return actualId;
   }
 
-  const getActualTime = async (memberId, condition) => {
-    logger.system.info('actual-time-service#getActualTime', memberId, condition);
+  /**
+   * 実稼働時間の取得
+   */
+  const getActualTime = async (authUser, condition) => {
+    logger.system.info('actual-time-service#getActualTime', authUser, condition);
 
     const selectQuery = new SelectQuery(actualTimeModel);
-    selectQuery.addCondition('AND', 'member_id', memberId);
+    selectQuery.addCondition('AND', 'member_id', authUser);
     if (condition.year) {
       selectQuery.addCondition('AND', 'EXTRACT(YEAR FROM date)', condition.year);
     }
