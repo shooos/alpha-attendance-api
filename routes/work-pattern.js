@@ -6,11 +6,10 @@ const logger = require('../system/logger');
 module.exports = (accessor) => {
   const workPatternService = require('../service/work-pattern-service')(accessor);
 
-  /**
-   * 認証処理
-   */
+  /** 認証 */
   router.use(authorization(accessor));
 
+  /** 勤務形態登録 */
   router.post('/register', async (req, res) => {
     const body = req.body;
     if (!body) {
@@ -23,6 +22,8 @@ module.exports = (accessor) => {
         logger.error.error('Register work pattern faild.', err);
         return res.send({error: true, message: 'Register work pattern faild.'});
       });
+
+    res.send({token: req.newToken, data: {}});
   });
 
   return router;

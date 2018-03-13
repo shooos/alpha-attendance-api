@@ -49,7 +49,7 @@ const resolveType = (column) => {
   case 'date':
     return 'DATE';
   case 'time':
-    return 'TIME WITHOUT TIME ZONE';
+    return 'VARCHAR(5)';
   case 'hours':
     return 'INTERVAL HOUR TO MINUTE';
   case 'datetime':

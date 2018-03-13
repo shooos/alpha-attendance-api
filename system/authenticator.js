@@ -134,7 +134,7 @@ Authenticator.prototype.authenticate = async function (token, client) {
 
 /** トークンの生成 */
 Authenticator.prototype.generateToken = function () {
-  return 'alpha-attendance-' + uniqid();
+  return uniqid();
 }
 
 module.exports = Authenticator;

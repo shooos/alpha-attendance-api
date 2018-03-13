@@ -9,7 +9,7 @@ const SelectQueryModel = function (model) {
   this._columns = Object.keys(model.columns).map((name) => camel2snake(name));
   this._conditions = [];
   this._values = {};
-  this._joins = [];
+  this._orderBy = [];
 }
 
 SelectQueryModel.prototype.addCondition = function (operator, name, value, not) {
@@ -27,22 +27,14 @@ SelectQueryModel.prototype.addCondition = function (operator, name, value, not) 
   });
 }
 
-SelectQueryModel.prototype.naturalLeftOuterJoin = function (innerTableModel) {
-  this._naturalJoin('NATURAL LEFT OUTER JOIN', innerTableModel);
-}
-
-SelectQueryModel.prototype.naturalInnerJoin = function (innerTableModel) {
-  this._naturalJoin('NATURAL INNER JOIN', innerTableModel);
-}
-
-SelectQueryModel.prototype._naturalJoin = function (joinRule, innerTableModel) {
-  this._joins.push([joinRule, innerTableModel.name].join(' '));
+SelectQueryModel.prototype.addOrderBy = function (column, order) {
+  this._orderBy.push([column, order].join(' '));
 }
 
 SelectQueryModel.prototype.getQuery = function () {
   const query = [];
   query.push('SELECT');
-  query.push(this._columns.join(', '));
+  query.push(this._columns.map((column) => this._model.name + '.' + column).join(', '));
   query.push('FROM');
   query.push(this._model.name);
   if (this._conditions.length) {
@@ -56,6 +48,10 @@ SelectQueryModel.prototype.getQuery = function () {
     }
     query.push('WHERE');
     query.push(condition);
+  }
+  if (this._orderBy.length) {
+    query.push('ORDER BY');
+    query.push(this._orderBy.join(', '));
   }
 
   return {

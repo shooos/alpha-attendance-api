@@ -29,9 +29,8 @@ module.exports = (accessor) => {
       startTime = record.beginTime < startTime ? record.beginTime : startTime;
       endTime = record.finishTime > endTime ? record.finishTime : endTime;
     }
-    await workPatternService.calcurateWorkingTime(startTime, endTime, data.workPattern);
-    const diff = moment.duration(moment(endTime, 'HH:mm').diff(moment(startTime, 'HH:mm')));
-    const dutyHours = diff.toISOString();
+    const workingHours = await workPatternService.calcurateWorkingTime(startTime, endTime, data.workPattern);
+    logger.system.debug(workingHours);
     const queries = [];
     const actualId = data.actualId || uniqid();
 
@@ -40,7 +39,7 @@ module.exports = (accessor) => {
     values.actual_id = actualId;
     values.start_time = startTime;
     values.end_time = endTime;
-    values.duty_hours = dutyHours;
+    values.duty_hours = workingHours.dutyHours;
     upsertActual.setValues(values, authUser);
     queries.push(upsertActual);
 
@@ -74,8 +73,22 @@ module.exports = (accessor) => {
     if (condition.date) {
       selectQuery.addCondition('AND', 'date', condition.date);
     }
+    const actualTimes = await accessor.execute(selectQuery);
 
-    const results = await accessor.execute(selectQuery);
+    const results = [];
+    for (let actual of actualTimes) {
+      const actualId = actual.actualId;
+
+      const selectDetailQuery = new SelectQuery(actualDetailModel);
+      selectDetailQuery.addCondition('AND', 'actual_id', actualId);
+      selectDetailQuery.addOrderBy('begin_time', 'ASC');
+      const detail = await accessor.execute(selectDetailQuery);
+
+      const result = actual;
+      result.detail = detail;
+      results.push(result);
+    }
+
     return results;
   }
 

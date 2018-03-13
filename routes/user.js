@@ -10,6 +10,7 @@ const memberModel = require('../accessor/model/member');
 module.exports = (accessor) => {
   const authenticator = new Authenticator(accessor);
 
+  /** メンバ登録 */
   router.post('/register', async (req, res) => {
     const body = req.body;
     if (!body) {
@@ -22,9 +23,10 @@ module.exports = (accessor) => {
         logger.error.error(err);
         return res.send({error: true, message: err.message});
       });
-    return res.send({data: true});
+    return res.send({data: {}});
   });
 
+  /** ログイン */
   router.post('/login', async (req, res) => {
     const body = req.body;
     if (!body) return res.send({error: true, message: 'Who are you?'});
@@ -38,6 +40,7 @@ module.exports = (accessor) => {
     return res.send({data: {token: token}});
   });
 
+  /** ログアウト */
   router.post('/logout', async (req, res) => {
     const body = req.body;
     if (!body) res.send({error: true, message: 'Who are you?'});
@@ -46,7 +49,7 @@ module.exports = (accessor) => {
     if (!result) {
       return res.send({error: true, message: 'Logout failed.'});
     }
-    return res.send({data: true});
+    return res.send({data: {}});
   });
 
   return router;

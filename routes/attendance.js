@@ -8,14 +8,10 @@ const MSG = require('../config/message/system-messages.json');
 module.exports = (accessor) => {
   const actualService = require('../service/actual-time-service')(accessor);
 
-  /**
-   * 認証処理
-   */
+  /** 認証 */
   router.use(authorization(accessor));
 
-  /**
-   * 稼働予定登録・更新
-   */
+  /** 稼働予定登録・更新 */
   router.post('/estimate', async (req, res) => {
     const body = req.body;
     if (!body) {
@@ -32,9 +28,7 @@ module.exports = (accessor) => {
     return res.send({token: req.newToken, data: true});
   });
 
-  /**
-   * 稼働予定一覧取得（年月指定）
-   */
+  /** 稼働予定一覧取得（年月指定） */
   router.get('/estimates/:memberId/:year?/:month?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
@@ -48,9 +42,7 @@ module.exports = (accessor) => {
     return res.send({token: req.newToken, data: results});
   });
 
-  /**
-   * 稼働予定1件取得（日付指定）
-   */
+  /** 稼働予定1件取得（日付指定） */
   router.get('/estimate/:memberId/:date?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
@@ -62,9 +54,7 @@ module.exports = (accessor) => {
     return res.send({token: req.newToken, data: results[0]});
   });
 
-  /**
-   * 稼働実績登録・更新
-   */
+  /** 稼働実績登録・更新 */
   router.post('/actual', async (req, res) => {
     const body = req.body;
     if (!body) {
@@ -98,9 +88,7 @@ module.exports = (accessor) => {
     }});
   });
 
-  /**
-   * 稼働実績一覧取得（年月指定）
-   */
+  /** 稼働実績一覧取得（年月指定） */
   router.get('/actuals/:memberId/:year?/:month?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
@@ -115,9 +103,7 @@ module.exports = (accessor) => {
     return res.send({token: req.newToken, data: results});
   });
 
-  /**
-   * 稼働実績1件取得（日時指定）
-   */
+  /** 稼働実績1件取得（日時指定） */
   router.get('/actual/:memberId/:date?', async (req, res) => {
     if (req.authUser !== req.params.memberId) {
       logger.error.error(MSG.SELECT_NOT_PERMITTED);
