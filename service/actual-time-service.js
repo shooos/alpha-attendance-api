@@ -3,6 +3,7 @@ const moment = require('moment');
 const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
 const logger = require('../system/logger');
+const timeCalcurator = require('../system/time-calcurator');
 
 /* Queries */
 const UpsertQuery = require('../accessor/sql/postgres/upsert-query');
@@ -20,17 +21,13 @@ module.exports = (accessor) => {
    * 実稼働時間の登録・更新
    */
   const registerActualTime = async (authUser, data) => {
-    logger.system.info('actual-time-service#registerActualTime', data);
+    logger.system.debug('actual-time-service#registerActualTime', data);
 
-    let startTime = '99:99';
-    let endTime = '00:00';
-    for (let record of data.detail) {
-      // 24時間形式の時刻であることを前提としている
-      startTime = record.beginTime < startTime ? record.beginTime : startTime;
-      endTime = record.finishTime > endTime ? record.finishTime : endTime;
+    const workingHours = await workPatternService.calcurateWorkingTime(data.workPattern, data.detail);
+    if (workingHours.message) {
+      logger.system.debug(workingHours.message, workingHours);
     }
-    const workingHours = await workPatternService.calcurateWorkingTime(startTime, endTime, data.workPattern);
-    logger.system.debug(workingHours);
+
     const queries = [];
     const actualId = data.actualId || uniqid();
 
@@ -59,11 +56,11 @@ module.exports = (accessor) => {
   /**
    * 実稼働時間の取得
    */
-  const getActualTime = async (authUser, condition) => {
-    logger.system.info('actual-time-service#getActualTime', authUser, condition);
+  const getActualTime = async (condition) => {
+    logger.system.debug('actual-time-service#getActualTime', condition);
 
     const selectQuery = new SelectQuery(actualTimeModel);
-    selectQuery.addCondition('AND', 'member_id', authUser);
+    selectQuery.addCondition('AND', 'member_id', condition.memberId);
     if (condition.year) {
       selectQuery.addCondition('AND', 'EXTRACT(YEAR FROM date)', condition.year);
     }
@@ -92,8 +89,26 @@ module.exports = (accessor) => {
     return results;
   }
 
+  /** 勤務時間サマリ取得 */
+  const getActualTimeSummery = (condition) => {
+    logger.system.debug('actual-time-service#getActualTimeSummery', condition);
+
+    const selectQuery = new SelectQuery(actualTimeModel);
+    if (condition.memberId) {
+      selectQuery.addCondition('AND', 'member_id', condition.memberId);
+    }
+    selectQuery.addCondition('AND', 'EXTRACT(YEAR FROM date)', condition.year);
+    selectQuery.addCondition('AND', 'EXTRACT(MONTH FROM date)', condition.month);
+    selectQuery.addOrderBy('member_id', 'ASC');
+    selectQuery.addOrderBy('date', 'ASC');
+    const actualTimes = await accessor.execute(selectQuery);
+
+
+  }
+
   return {
     registerActualTime: registerActualTime,
     getActualTime: getActualTime,
+    getActualTimeSummery: getActualTimeSummery,
   }
 }

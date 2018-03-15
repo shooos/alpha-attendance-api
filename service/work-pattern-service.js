@@ -2,6 +2,7 @@ const moment = require('moment');
 const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
 const logger = require('../system/logger');
+const timeCalcurator = require('../system/time-calcurator');
 
 /* Queries */
 const SelectQuery = require('../accessor/sql/postgres/select-query');
@@ -87,114 +88,50 @@ module.exports = (accessor) => {
   /**
    * 休憩時間を除外した勤務時間を計算する
    */
-  const calcurateWorkingTime = async (start, end, workPatternId) => {
+  const calcurateWorkingTime = async (workPatternId, detail) => {
+    const result = {
+      message: '',
+      times: [],
+    };
+
     const pattern = await getWorkPattern(workPatternId);
     const hours = await getWorkingHours(workPatternId);
-    let startTime = start;
-    let endTime = end;
-
     if (pattern == null || hours == null) {
-      return {
-        dutyHours: timeSubtraction(endTime, startTime),
-        startTime: startTime,
-        endTime: endTime,
-        message: 'Work pattern [' + workPatternId + '] is not registerd.',
-      };
+      result.message = 'Work pattern [' + workPatternId + '] is not registerd.';
+      return result;
     }
 
-    if (startTime > endTime
-        || pattern.endWorkingTime < startTime
-        || pattern.startWorkingTime > endTime) {
-      return {
-        dutyHours: '00:00',
-        startTime: startTime,
-        endTime: endTime,
-        message: 'Work time is wrog.',
-      };
-    }
-
-    if (pattern.startBeforeCoreTime > startTime) {
-      startTime = pattern.startBeforeCoreTime;
-    }
-    if (pattern.endWorkingTime < endTime) {
-      endTime = pattern.endWorkingTime;
-    }
-
-    let breakingTime = '00:00';
-    let message;
-    hours.some((wh, index) => {
-      if (wh.startTime < startTime && wh.breakTime) {
-        // 休憩時間にHitするときは次の勤務時間の開始時間を開始時間にする
-        const next = hours[index + 1];
-        if (next != null) {
-          if (next.breakTime) return false;
-          startTime = next.startTime
+    const times = [].concat(detail);
+    const wTimes = [];
+    for (let t of times) {
+      let startTime = t.beginTime;
+      let endTime = t.finishTime;
+      if (timeCalcurator.compare(pattern.startBeforeCoreTime, t.startTime) === -1) {
+        startTime = pattern.startBeforeCoreTime;
+      }
+      if (timeCalcurator.compare(pattern.endWorkingTime, t.finishTime) === 1) {
+        endTime = pattern.endWorkingTime;
+      }
+      hours.some((wh, index) => {
+        const next = hours[index + 1] || {};
+        if (!next) {
+          next.startTime = pattern.endWorkingTime;
         }
-      }
-      if (wh.startTime > endTime) {
-        if (hours[index - 1] && hours[index - 1].breakTime) {
-          message = '終業時刻が休憩時間中になっているため勤務時間延長申請を行ってください。';
+
+        if (timeCalcurator.compare(wh.startTime, t.beginTime) !== -1) {
+          startTime = wh.breakTime ? wh.startTime : t.beginTime;
         }
-        // 終業時刻帯まででループ終了
-        return true;
-      }
-      if (wh.breakTime) {
-        const finishTime = hours[index + 1] ? hours[index + 1].startTime : pattern.endWorkingTime;
-        breakingTime = timeAddition(breakingTime, timeSubtraction(finishTime, wh.startTime));
-      }
-    });
-
-    const dutyHours = timeSubtraction(timeSubtraction(endTime, startTime), breakingTime);
-    return {
-      dutyHours: dutyHours,
-      startTime: startTime,
-      endTime: endTime,
-      message: message,
-    };
-  }
-
-  /** 時間差分 */
-  const timeSubtraction = (a, b) => {
-    const A = a.split(':');
-    const B = b.split(':');
-
-    const Amm = A.pop() - 0;
-    const Ahh = A.pop() - 0;
-    const Bmm = B.pop() - 0;
-    const Bhh = B.pop() - 0;
-
-    if (Amm < Bmm) {
-      // 桁借り
-      Ahh--;
-      Amm += 60;
+        if (timeCalcurator.compare(next.startTime, t.finishTime) === -1) {
+          endTime = wh.breakTime ? wh.endTime : t.finishTime;
+          return true;
+        }
+      });
+      const workTime = timeCalcurator.subtraction(endTime, startTime);
+      wTimes.push({
+        pCode: t.pCode,
+        workTime: workTime,
+      });
     }
-
-    const mm = Amm - Bmm;
-    const hh = Ahh - Bhh;
-
-    return [hh, mm].join(':');
-  }
-
-  /** 時間加算 */
-  const timeAddition = (a, b) => {
-    const A = a.split(':');
-    const B = b.split(':');
-
-    const Amm = A.pop() - 0;
-    const Ahh = A.pop() - 0;
-    const Bmm = B.pop() - 0;
-    const Bhh = B.pop() - 0;
-
-    let mm = Amm + Bmm;
-    let up = 0;
-    if (mm >= 60) {
-      // 桁上がり
-      up = Math.floor(mm / 60);
-      mm %= 60;
-    }
-    const hh = Ahh + Bhh + up;
-
-    return [hh, mm].join(':');
   }
 
   return {

@@ -90,13 +90,9 @@ module.exports = (accessor) => {
 
   /** 稼働実績一覧取得（年月指定） */
   router.get('/actuals/:memberId/:year?/:month?', async (req, res) => {
-    if (req.authUser !== req.params.memberId) {
-      logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
-    }
-
     const current = new Date();
-    const results = await actualService.getActualTime(req.authUser, {
+    const results = await actualService.getActualTime({
+      memberId: req.params.memberId,
       year: req.params.year || (current.getFullYear()),
       month: req.params.month || (current.getMonth() + 1),
     });
@@ -105,15 +101,21 @@ module.exports = (accessor) => {
 
   /** 稼働実績1件取得（日時指定） */
   router.get('/actual/:memberId/:date?', async (req, res) => {
-    if (req.authUser !== req.params.memberId) {
-      logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
-    }
-
-    const results = await actualService.getActualTime(req.authUser, {
+    const results = await actualService.getActualTime({
+      memberId: req.params.memberId,
       date: req.params.date || new Date(),
     });
     return res.send({token: req.newToken, data: results[0]});
+  });
+
+  /** 稼働実績サマリ取得（年月指定） */
+  router.get('/actual/summery/:year?/:month?/:memberId?', async (req, res) => {
+    const results = await actualService.getActualTimeSummery({
+      memberId: req.params.memberId || null,
+      year: req.params.year || (current.getFullYear()),
+      month: req.params.month || (current.getMonth() + 1),
+    });
+    return res.send({token: req.newToken, data: results});
   });
 
   return router;
