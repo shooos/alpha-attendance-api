@@ -22,7 +22,6 @@ module.exports = function (accessor) {
       }
 
       req.authUser = member.memberId;
-      req.newToken = member.token;
     }
     next();
   };

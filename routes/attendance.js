@@ -6,6 +6,8 @@ const createValuesObject = require('../accessor/util/create-values-object');
 const MSG = require('../config/message/system-messages.json');
 
 module.exports = (accessor) => {
+  /* Services */
+  const estimateService = require('../service/estimate-time-service')(accessor);
   const actualService = require('../service/actual-time-service')(accessor);
 
   /** 認証 */
@@ -16,42 +18,51 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
-      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED, token: req.newToken});
+      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+    }
+    if (!Array.isArray(body.detail)) {
+      logger.error.error('Parameter [detail] is required');
+      return res.send({error: true, message: 'Parameter [detail] is required'});
     }
 
     const authUser = req.authUser;
     if (authUser !== body.memberId) {
       logger.error.error(MSG.UPDATE_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED, token: req.newToken});
+      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED});
     }
 
-    return res.send({token: req.newToken, data: true});
+    const results = await estimateService.registerEstimateTime(authUser, body.detail);
+    return res.send({data: results});
   });
 
   /** 稼働予定一覧取得（年月指定） */
   router.get('/estimates/:memberId/:year?/:month?', async (req, res) => {
-    if (req.authUser !== req.params.memberId) {
-      logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
-    }
-
     const current = new Date();
-    const year = req.params.year || (current.getFullYear());
-    const month = req.params.month || (current.getMonth() + 1);
-
-    return res.send({token: req.newToken, data: results});
+    const results = await estimateService.getEstimateTime({
+      memberId: req.params.memberId,
+      year: req.params.year || (current.getFullYear()),
+      month: req.params.month || (current.getMonth() + 1),
+    });
+    return res.send({data: results});
   });
 
   /** 稼働予定1件取得（日付指定） */
   router.get('/estimate/:memberId/:date?', async (req, res) => {
-    if (req.authUser !== req.params.memberId) {
-      logger.error.error(MSG.SELECT_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.SELECT_NOT_PERMITTED, token: req.newToken});
-    }
+    const results = await estimateService.getEstimateTime({
+      memberId: req.params.memberId,
+      date: req.params.date || new Date(),
+    });
+    return res.send({data: results[0]});
+  });
 
-    const date = new Date() || req.params.date;
-
-    return res.send({token: req.newToken, data: results[0]});
+  /** 稼働実績サマリ取得（年月指定） */
+  router.get('/summary/estimates/:year?/:month?/:memberId?', async (req, res) => {
+    const results = await estimateService.getEstimateTimeSummery({
+      memberId: req.params.memberId || null,
+      year: req.params.year || (current.getFullYear()),
+      month: req.params.month || (current.getMonth() + 1),
+    });
+    return res.send({data: results});
   });
 
   /** 稼働実績登録・更新 */
@@ -59,20 +70,21 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
-      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED, token: req.newToken});
+      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
     }
     if (!Array.isArray(body.detail)) {
       logger.error.error('Parameter [detail] is required');
-      return res.send({error: true, message: 'Parameter [detail] is required', token: req.newToken});
+      return res.send({error: true, message: 'Parameter [detail] is required'});
     }
 
     const authUser = req.authUser;
     if (authUser !== body.memberId) {
       logger.error.error(MSG.UPDATE_NOT_PERMITTED);
-      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED, token: req.newToken});
+      return res.send({error: true, message: MSG.UPDATE_NOT_PERMITTED});
     }
 
-    const record = await actualService.getActualTime(body.memberId, {
+    const record = await actualService.getActualTime({
+      memberId: body.memberId,
       date: body.date,
     });
     const actualId = await actualService.registerActualTime(authUser, {
@@ -83,7 +95,7 @@ module.exports = (accessor) => {
       detail: body.detail,
     });
 
-    return res.send({token: req.newToken, data: {
+    return res.send({data: {
       actualId: actualId,
     }});
   });
@@ -96,7 +108,7 @@ module.exports = (accessor) => {
       year: req.params.year || (current.getFullYear()),
       month: req.params.month || (current.getMonth() + 1),
     });
-    return res.send({token: req.newToken, data: results});
+    return res.send({data: results});
   });
 
   /** 稼働実績1件取得（日時指定） */
@@ -105,17 +117,17 @@ module.exports = (accessor) => {
       memberId: req.params.memberId,
       date: req.params.date || new Date(),
     });
-    return res.send({token: req.newToken, data: results[0]});
+    return res.send({data: results[0]});
   });
 
   /** 稼働実績サマリ取得（年月指定） */
-  router.get('/actual/summery/:year?/:month?/:memberId?', async (req, res) => {
+  router.get('/summary/actuals/:year?/:month?/:memberId?', async (req, res) => {
     const results = await actualService.getActualTimeSummery({
       memberId: req.params.memberId || null,
       year: req.params.year || (current.getFullYear()),
       month: req.params.month || (current.getMonth() + 1),
     });
-    return res.send({token: req.newToken, data: results});
+    return res.send({data: results});
   });
 
   return router;

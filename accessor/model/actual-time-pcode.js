@@ -10,6 +10,7 @@ module.exports = {
     },
     pCode: {
       type: 'string',
+      length: 64,
       key: true,
     },
     dutyHours: {

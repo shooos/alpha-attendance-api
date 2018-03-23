@@ -14,15 +14,21 @@ module.exports = {
       notNull: true,
       key: true,
     },
-    estimateId: {
+    workPattern: {
       type: 'string',
-      length: 16,
+      length: 255,
     },
     startTime: {
       type: 'time',
     },
     endTime: {
       type: 'time',
+    },
+    estimateHours: {
+      type: 'hours',
+    },
+    unclaimedHours: {
+      type: 'hours',
     },
   }, commonInfo),
 }

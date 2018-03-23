@@ -3,6 +3,9 @@ const bodyParser = require('body-parser');
 const logger = require('./system/logger');
 const app = express();
 
+/* Config */
+const systemConf = require('./config/system-config.json');
+
 app.use(bodyParser.json());
 app.use(logger.express);
 
@@ -19,11 +22,11 @@ accessor.initialize()
   const authenticator = new Authenticator(accessor);
   await authenticator.initialize();
 
-  app.use('/attendance', attendanceAPI(accessor));
-  app.use('/user', userAPI(accessor));
-  app.use('/workPattern', workPatternAPI(accessor));
+  app.use('/alpha/attendance', attendanceAPI(accessor));
+  app.use('/alpha/user', userAPI(accessor));
+  app.use('/alpha/workPattern', workPatternAPI(accessor));
 
-  app.listen(8080, () => {
+  app.listen(systemConf.port || 3000, () => {
     logger.system.info('ｷﾀ━(ﾟ∀ﾟ)━!! STARTUP COMPLETE! Alpha Attendance APIs');
   });
 })

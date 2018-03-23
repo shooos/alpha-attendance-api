@@ -22,9 +22,6 @@ module.exports = function (rows) {
       case 'datetime':
         result[key] = moment(row[columnName]);
         break;
-      case 'time':
-        result[key] = moment(row[columnName], 'HH:mm').format('HH:mm');
-        break;
       case 'hours':
         result[key] = moment.utc(moment.duration(row[columnName]).asMilliseconds()).format('HH:mm');
         break;

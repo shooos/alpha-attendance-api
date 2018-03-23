@@ -49,8 +49,8 @@ Postgres.prototype.initialize = async function() {
   models.push(require('./model/working-hours'));
   models.push(require('./model/actual-time'));
   models.push(require('./model/actual-time-detail'));
+  models.push(require('./model/actual-time-pcode'));
   models.push(require('./model/estimate-time'));
-  models.push(require('./model/estimate-unclaimed-time'));
 
   for (let model of models.concat([])) {
     const isExists = await this.isExistsTables(model.name);

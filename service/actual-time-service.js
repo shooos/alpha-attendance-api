@@ -12,6 +12,7 @@ const SelectQuery = require('../accessor/sql/postgres/select-query');
 /* Models */
 const actualTimeModel = require('../accessor/model/actual-time');
 const actualDetailModel = require('../accessor/model/actual-time-detail');
+const actualPcodeHoursModel = require('../accessor/model/actual-time-pcode');
 
 module.exports = (accessor) => {
   /* Serviceis */
@@ -34,8 +35,8 @@ module.exports = (accessor) => {
     const upsertActual = new UpsertQuery(actualTimeModel);
     const values = createValuesObject(actualTimeModel, data);
     values.actual_id = actualId;
-    values.start_time = startTime;
-    values.end_time = endTime;
+    values.start_time = workingHours.startTime;
+    values.end_time = workingHours.endTime;
     values.duty_hours = workingHours.dutyHours;
     upsertActual.setValues(values, authUser);
     queries.push(upsertActual);
@@ -47,6 +48,18 @@ module.exports = (accessor) => {
       values.actual_id = actualId;
       upsertDetail.setValues(values, authUser);
       queries.push(upsertDetail);
+    }
+
+    // P-CODEごとの勤務時間を更新・登録
+    for (let time of workingHours.times) {
+      const upsertPcodeHours = new UpsertQuery(actualPcodeHoursModel);
+      const values = {
+        actual_id: actualId,
+        p_code: time.pCode,
+        duty_hours: time.dutyHours,
+      };
+      upsertPcodeHours.setValues(values, authUser);
+      queries.push(upsertPcodeHours);
     }
 
     await accessor.execute(queries);
@@ -90,7 +103,7 @@ module.exports = (accessor) => {
   }
 
   /** 勤務時間サマリ取得 */
-  const getActualTimeSummery = (condition) => {
+  const getActualTimeSummery = async (condition) => {
     logger.system.debug('actual-time-service#getActualTimeSummery', condition);
 
     const selectQuery = new SelectQuery(actualTimeModel);
@@ -103,7 +116,7 @@ module.exports = (accessor) => {
     selectQuery.addOrderBy('date', 'ASC');
     const actualTimes = await accessor.execute(selectQuery);
 
-
+    // TODO: P-CODEごとに時間集計して返す。
   }
 
   return {

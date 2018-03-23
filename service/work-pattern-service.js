@@ -20,7 +20,7 @@ module.exports = (accessor) => {
    * 勤務形態の登録・更新
    */
   const registerWorkPattern = async (authUser, data) => {
-    logger.system.info('work-pattern-service#registerWorkPattern', data);
+    logger.system.debug('work-pattern-service#registerWorkPattern', data);
 
     const queries = [];
     const upsertPattern = new UpsertQuery(workPatternModel);
@@ -48,7 +48,7 @@ module.exports = (accessor) => {
    * 勤務形態の取得
    */
   const getWorkPattern = async (workPatternId) => {
-    logger.system.info('work-pattern-service#getWorkPattern', workPatternId);
+    logger.system.debug('work-pattern-service#getWorkPattern', workPatternId);
 
     // キャッシュがあれば返す
     if (workPatternCache[workPatternId] != null) {
@@ -62,12 +62,12 @@ module.exports = (accessor) => {
     // 一度取得したらキャッシュする
     workPatternCache[workPatternId] = results[0];
 
-    return results;
+    return results[0];
   }
 
   /** 勤務形態タイムテーブルの取得 */
   const getWorkingHours = async (workPatternId) => {
-    logger.system.info('work-pattern-service#getWorkingHours', workPatternId);
+    logger.system.debug('work-pattern-service#getWorkingHours', workPatternId);
 
     // キャッシュがあれば返す
     if (workingHoursCache[workPatternId] != null) {
@@ -85,15 +85,14 @@ module.exports = (accessor) => {
     return results;
   }
 
-  /**
-   * 休憩時間を除外した勤務時間を計算する
-   */
-  const calcurateWorkingTime = async (workPatternId, detail) => {
-    const result = {
-      message: '',
-      times: [],
-    };
+  /** 休憩時間を除外した予測時間を計算する */
+  const calcurateEstimateHours = async (workPatternId, estimate) => {
+    logger.system.debug('work-pattern-service#calcurateEstimateHours', workPatternId, estimate);
 
+    const result = {
+      hours: '00:00',
+      message: null,
+    };
     const pattern = await getWorkPattern(workPatternId);
     const hours = await getWorkingHours(workPatternId);
     if (pattern == null || hours == null) {
@@ -101,43 +100,107 @@ module.exports = (accessor) => {
       return result;
     }
 
-    const times = [].concat(detail);
-    const wTimes = [];
-    for (let t of times) {
-      let startTime = t.beginTime;
-      let endTime = t.finishTime;
-      if (timeCalcurator.compare(pattern.startBeforeCoreTime, t.startTime) === -1) {
-        startTime = pattern.startBeforeCoreTime;
+    let breakTime = '00:00';
+    const start = timeCalcurator.max(pattern.startBeforeCoreTime, estimate.startTime);
+    const end = timeCalcurator.min(pattern.endWorkingTime, estimate.endTime);
+    const diff = timeCalcurator.subtraction(end, start);
+
+    // 予測時間中の休憩時間を算出する
+    hours.some((wh, index) => {
+      const next = hours[index + 1];
+      if (!next) {
+        next = {startTime: pattern.endWorkingTime};
       }
-      if (timeCalcurator.compare(pattern.endWorkingTime, t.finishTime) === 1) {
-        endTime = pattern.endWorkingTime;
+      if (timeCalcurator.compare(start, next.startTime) <= 0) return false;
+      if (timeCalcurator.compare(end, next.startTime) >= 0 && !wh.breakTime) return true;
+
+      if (wh.breakTime) {
+        const begin = timeCalcurator.max(start, wh.startTime);
+        const finish = timeCalcurator.min(next.startTime, end);
+        breakTime = timeCalcurator.addition(breakTime, timeCalcurator.subtraction(finish, begin));
       }
-      hours.some((wh, index) => {
-        const next = hours[index + 1] || {};
+    });
+
+    result.hours = timeCalcurator.subtraction(diff, breakTime);
+    return result;
+  }
+
+  /** 休憩時間を除外した勤務時間を計算する */
+  const calcurateWorkingTime = async (workPatternId, detail) => {
+    logger.system.debug('work-pattern-service#calcurateWorkingTime', workPatternId, detail);
+
+    const result = {
+      dutyHours: '00:00',
+      startTime: '00:00',
+      endTime: '00:00',
+      times: [],
+      message: null,
+    };
+    const pattern = await getWorkPattern(workPatternId);
+    const hours = await getWorkingHours(workPatbreakTimeternId);
+    if (pattern == null || hours == null) {
+      result.message = 'Work pattern [' + workPatternId + '] is not registerd.';
+      return result;
+    }
+
+    const wTimes = {};
+    let start = '99:99';
+    let end = '00:00';
+    let index = 0;
+    let length = hours.length;
+    for (let t of [].concat(detail)) {
+      let begin = timeCalcurator.max(t.beginTime, pattern.startBeforeCoreTime);
+      let finish = timeCalcurator.min(t.finishTime, pattern.endWorkingTime);
+      let breakTime = '00:00';
+
+      for (; index < length; index++) {
+        const wh = hours[index];
+        const next = hours[index + 1];
         if (!next) {
-          next.startTime = pattern.endWorkingTime;
+          next = {startTime: pattern.endWorkingTime};
+        }
+        if (timeCalcurator.compare(begin, next.startTime) <= 0) continue;
+        if (timeCalcurator.compare(finish, next.startTime) >=0 && !wh.breakTime) {
+          index--;
+          break;
         }
 
-        if (timeCalcurator.compare(wh.startTime, t.beginTime) !== -1) {
-          startTime = wh.breakTime ? wh.startTime : t.beginTime;
+        if (wh.breakTime) {
+          // 勤務時間中の休憩時間を合算
+          breakTime = timeCalcurator.addition(breakTime, timeCalcurator.subtraction(next.startTime, wh.startTime));
         }
-        if (timeCalcurator.compare(next.startTime, t.finishTime) === -1) {
-          endTime = wh.breakTime ? wh.endTime : t.finishTime;
-          return true;
-        }
-      });
-      const workTime = timeCalcurator.subtraction(endTime, startTime);
-      wTimes.push({
-        pCode: t.pCode,
-        workTime: workTime,
+      }
+
+      start = timeCalcurator.min(start, begin);
+      end = timeCalcurator.max(end, finish);
+
+      const workTime = timeCalcurator.subtraction(timeCalcurator.subtraction(finish, begin), breakTime);
+      let time = wTimes[t.pCode] || '00:00';
+      wTimes[t.pCode] = timeCalcurator.addition(time, workTime);
+    }
+
+    const times = [];
+    let dutyHours = '00:00';
+    for (let pCode of Object.keys(wTimes)) {
+      dutyHours = timeCalcurator.addition(dutyHours, wTimes[pCode]);
+      times.push({
+        pCode: pCode,
+        dutyHours: wTimes[pCode],
       });
     }
+
+    result.dutyHours = dutyHours;
+    result.startTime = start;
+    result.endTime = end;
+    result.times = times;
+    return result;
   }
 
   return {
     registerWorkPattern: registerWorkPattern,
     getWorkPattern: getWorkPattern,
     getWorkingHours: getWorkingHours,
+    calcurateEstimateHours: calcurateEstimateHours,
     calcurateWorkingTime: calcurateWorkingTime,
   }
 }

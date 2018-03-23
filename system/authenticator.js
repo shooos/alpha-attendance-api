@@ -1,5 +1,5 @@
 const moment = require('moment');
-const uniqid = require('uniqid');
+const uuidv4 = require('uuid/v4');
 const memberModel = require('../accessor/model/member');
 const logger = require('../system/logger');
 
@@ -29,6 +29,8 @@ Authenticator.prototype.initialize = async function() {
 
 /** メンバ登録 */
 Authenticator.prototype.register = async function (memberId, password, admin) {
+  logger.system.debug('authenticator#register', memberId, password, admin);
+
   const selectQuery = new SelectQuery(memberModel);
   selectQuery.addCondition('AND', 'member_id', memberId);
 
@@ -46,6 +48,8 @@ Authenticator.prototype.register = async function (memberId, password, admin) {
 
 /** ログイン */
 Authenticator.prototype.login = async function (memberId, password, client) {
+  logger.system.debug('authenticator#login', memberId, password, client);
+
   const selectQuery = new SelectQuery(memberModel);
   selectQuery.addCondition('AND', 'member_id', memberId);
   selectQuery.addCondition('AND', 'password', password);
@@ -78,6 +82,8 @@ Authenticator.prototype.login = async function (memberId, password, client) {
 
 /** ログアウト */
 Authenticator.prototype.logout = async function (memberId) {
+  logger.system.debug('authenticator#logout', memberId);
+
   const updateQuery = new UpdateQuery(memberModel);
   updateQuery.setUpdateValues({
     token: null,
@@ -102,6 +108,8 @@ Authenticator.prototype.logout = async function (memberId) {
 
 /** 認証 */
 Authenticator.prototype.authenticate = async function (token, client) {
+  logger.system.debug('authenticator#authenticate', token, client);
+
   const selectQuery = new SelectQuery(memberModel);
   selectQuery.addCondition('AND', 'token', token);
   selectQuery.addCondition('AND', 'client', client);
@@ -116,25 +124,26 @@ Authenticator.prototype.authenticate = async function (token, client) {
     throw new Error('Token expired.');
   }
 
-  const newToken = this.generateToken();
+  // Tokenの有効期限を延長する
   const updateQuery = new UpdateQuery(memberModel);
   updateQuery.setUpdateValues({
-    token: newToken,
     auth_time: moment().utc(),
   });
   updateQuery.addCondition('AND', 'token', token);
   updateQuery.addCondition('AND', 'client', client);
-  await this._accessor.execute(updateQuery);
+  await this._accessor.execute(updateQuery)
+    .catch(() => {
+      // 有効期限延長に失敗してもエラーにしない.
+    });
 
   return {
     memberId: result[0].memberId,
-    token: newToken,
   };
 }
 
 /** トークンの生成 */
 Authenticator.prototype.generateToken = function () {
-  return uniqid();
+  return uuidv4();
 }
 
 module.exports = Authenticator;

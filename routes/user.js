@@ -21,7 +21,8 @@ module.exports = (accessor) => {
     await authenticator.register(body.id, body.password, false)
       .catch((err) => {
         logger.error.error(err);
-        return res.send({error: true, message: err.message});
+        res.send({error: true, message: err.message});
+        // ここで終了させる
       });
     return res.send({data: {}});
   });
@@ -32,10 +33,12 @@ module.exports = (accessor) => {
     if (!body) return res.send({error: true, message: 'Who are you?'});
 
     const client = req.header('x-forwarded-for') || req.connection.remoteAddress;
-    const token = await authenticator.login(body.id, body.password, client).catch((err) => {
-      logger.error.error(err);
-      return res.send({error: true, message: err.message});
-    });
+    const token = await authenticator.login(body.id, body.password, client)
+      .catch((err) => {
+        logger.error.error(err);
+        res.send({error: true, message: err.message});
+        // 終了させたい flag 制御しかないか？
+      });
 
     return res.send({data: {token: token}});
   });
@@ -45,7 +48,12 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) res.send({error: true, message: 'Who are you?'});
 
-    const result = await authenticator.logout(body.id);
+    const result = await authenticator.logout(body.id)
+      .catch((err) => {
+        logger.error.error(err);
+        res.send({error: true, message: err.message});
+        // ここで終了させる
+      });
     if (!result) {
       return res.send({error: true, message: 'Logout failed.'});
     }

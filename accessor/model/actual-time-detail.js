@@ -17,6 +17,7 @@ module.exports = {
     },
     pCode: {
       type: 'string',
+      length: '32',
     },
   }, commonInfo),
 }

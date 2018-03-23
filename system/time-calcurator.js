@@ -1,5 +1,11 @@
 const logger = require('../system/logger');
 
+const format = (h, m) => {
+  const hh = ('0' + h).slice(-2);
+  const mm = ('0' + m).slice(-2);
+  return [hh, mm].join(':');
+}
+
 /**
  * 比較
  * a < b : 1
@@ -49,10 +55,7 @@ const subtraction = (a, b) => {
     Amm += 60;
   }
 
-  const mm = Amm - Bmm;
-  const hh = Ahh - Bhh;
-
-  return [hh, mm].join(':');
+  return format(Ahh - Bhh, Amm - Bmm);
 }
 
 /** 加算 */
@@ -74,23 +77,47 @@ const addition = (a, b) => {
     up = Math.floor(mm / 60);
     mm %= 60;
   }
-  const hh = Ahh + Bhh + up;
 
-  return [hh, mm].join(':');
+  return format(Ahh + Bhh + up, mm);
 }
 
 /** 合計 */
-const sum = (times) => {
-  logger.system.debug('time-calcurator#sum', times);
+const sum = (...args) => {
+  if (!times) return '00:00';
 
-  if (times == null) return '00:00';
-
-  let sum = '00:00';
-  for (let time of times) {
-    sum = addition(sum, time);
+  const times = [].concat(args);
+  let sum = times.shift();
+  for (let t of times) {
+    sum = addition(sum, t);
   }
 
   return sum;
+}
+
+/** 最大値 */
+const max = (...args) => {
+  if (!args) return '00:00';
+
+  const times = [].concat(args);
+  let max = times.shift();
+  for (let t of times) {
+    max = compare(max, t) > 0 ? t : max;
+  }
+
+  return max;
+}
+
+/** 最小値 */
+const min = (...args) => {
+  if (!args) return '00:00';
+
+  const times = [].concat(args);
+  let min = times.shift();
+  for (let t of times) {
+    min = compare(min, t) < 0 ? t : min;
+  }
+
+  return min;
 }
 
 module.exports = {
@@ -98,4 +125,6 @@ module.exports = {
   subtraction: subtraction,
   addition: addition,
   sum: sum,
+  max: max,
+  min: min,
 }

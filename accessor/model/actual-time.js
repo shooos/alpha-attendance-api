@@ -20,7 +20,7 @@ module.exports = {
     },
     workPattern: {
       type: 'string',
-      length: 32,
+      length: 255,
     },
     startTime: {
       type: 'time',
