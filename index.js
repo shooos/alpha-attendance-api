@@ -7,6 +7,7 @@ const app = express();
 const systemConf = require('./config/system-config.json');
 
 app.use(bodyParser.json());
+app.use(express.static(__dirname + '/public'));
 app.use(logger.express);
 
 const Accessor = require('./accessor/postgres');
