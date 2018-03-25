@@ -20,10 +20,22 @@ module.exports = (accessor) => {
     await workPatternService.registerWorkPattern(req.authUser, body)
       .catch((err) => {
         logger.error.error('Register work pattern faild.', err);
-        return res.send({error: true, message: 'Register work pattern faild.'});
+        res.send({error: true, message: 'Register work pattern faild.'});
+        // ここで終了させる
       });
 
-    res.send({token: req.newToken, data: {}});
+    return res.send({data: true});
+  });
+
+  /** 勤務形態リスト取得 */
+  router.get('/list', async (req, res) => {
+    const patterns = await workPatternService.getWorkPatterns()
+      .catch((err) => {
+        logger.error.error(err);
+        return res.send({error: true, message: err.message});
+      });
+
+    return res.send({data: patterns});
   });
 
   return router;

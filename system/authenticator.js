@@ -56,9 +56,13 @@ Authenticator.prototype.login = async function (memberId, password, client) {
 
   const member = await this._accessor.execute(selectQuery);
   if (!member.length) {
-    throw new Error(memberId + ' is not found.');
+    const MemberNotFoundError = new Error(memberId + ' is not found.');
+    MemberNotFoundError.name = 'MemberNotFoundError';
+    throw MemberNotFoundError;
   } else if (member[0].token != null) {
-    throw new Error(memberId + ' is already login.');
+    const AlreadyLoginError = new Error(memberId + ' is already login.');
+    AlreadyLoginError.name = 'AlreadyLoginError';
+    throw AlreadyLoginError;
   }
 
   const token = this.generateToken();

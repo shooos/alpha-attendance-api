@@ -1,4 +1,5 @@
 {
+  "MSG.LOGOUT_FAILED": "Logout failed.",
   "BODY_PARAMS_REQUIRED": "Body params required.",
   "SELECT_NOT_PERMITTED": "Records reference by others is not permitted.",
   "UPDATE_NOT_PERMITTED": "Records update by others is not permitted."

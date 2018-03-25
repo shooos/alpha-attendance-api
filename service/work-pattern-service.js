@@ -44,9 +44,18 @@ module.exports = (accessor) => {
     return results;
   }
 
-  /**
-   * 勤務形態の取得
-   */
+  /** 勤務形態一覧取得 */
+  const getWorkPatterns = async () => {
+    logger.system.debug('work-pattern-service#getWorkPatterns');
+
+    const selectQuery = new SelectQuery(workPatternModel);
+    selectQuery.addOrderBy('work_pattern_id', 'ASC');
+    const results = await accessor.execute(selectQuery);
+
+    return results;
+  }
+
+  /** 勤務形態の取得 */
   const getWorkPattern = async (workPatternId) => {
     logger.system.debug('work-pattern-service#getWorkPattern', workPatternId);
 
@@ -198,6 +207,7 @@ module.exports = (accessor) => {
 
   return {
     registerWorkPattern: registerWorkPattern,
+    getWorkPatterns: getWorkPatterns,
     getWorkPattern: getWorkPattern,
     getWorkingHours: getWorkingHours,
     calcurateEstimateHours: calcurateEstimateHours,

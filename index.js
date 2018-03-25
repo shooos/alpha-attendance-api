@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 const logger = require('./system/logger');
 const app = express();
@@ -6,6 +7,7 @@ const app = express();
 /* Config */
 const systemConf = require('./config/system-config.json');
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(__dirname + '/public'));
 app.use(logger.express);

@@ -15,14 +15,15 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
-      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+      res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+      throw new Error(MSG.BODY_PARAMS_REQUIRED);
     }
 
     await authenticator.register(body.id, body.password, false)
       .catch((err) => {
         logger.error.error(err);
         res.send({error: true, message: err.message});
-        // ここで終了させる
+        throw err;
       });
     return res.send({data: {}});
   });
@@ -36,8 +37,8 @@ module.exports = (accessor) => {
     const token = await authenticator.login(body.id, body.password, client)
       .catch((err) => {
         logger.error.error(err);
-        res.send({error: true, message: err.message});
-        // 終了させたい flag 制御しかないか？
+        res.send({error: err.name, message: err.message});
+        throw err;
       });
 
     return res.send({data: {token: token}});
@@ -52,10 +53,11 @@ module.exports = (accessor) => {
       .catch((err) => {
         logger.error.error(err);
         res.send({error: true, message: err.message});
-        // ここで終了させる
+        throw err;
       });
     if (!result) {
-      return res.send({error: true, message: 'Logout failed.'});
+      res.send({error: true, message: MSG.LOGOUT_FAILED});
+      throw new Error(MSG.LOGOUT_FAILED);
     }
     return res.send({data: {}});
   });
