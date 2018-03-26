@@ -14,17 +14,25 @@ module.exports = (accessor) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
-      return res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+      res.send({error: true, message: MSG.BODY_PARAMS_REQUIRED});
+      throw new Error(MSG.BODY_PARAMS_REQUIRED);
     }
 
     await workPatternService.registerWorkPattern(req.authUser, body)
       .catch((err) => {
         logger.error.error('Register work pattern faild.', err);
-        res.send({error: true, message: 'Register work pattern faild.'});
-        // ここで終了させる
+        res.send({error: err.name, message: 'Register work pattern faild.'});
+        throw err;
       });
 
     return res.send({data: true});
+  });
+
+  /** 勤務形態取得 */
+  router.get('/id/:workPatternId', async (req, res) => {
+    const id = req.params.workPatternId;
+    const result = await workPatternService.getWorkPattern(id);
+    return res.send({data: result});
   });
 
   /** 勤務形態リスト取得 */
@@ -32,7 +40,8 @@ module.exports = (accessor) => {
     const patterns = await workPatternService.getWorkPatterns()
       .catch((err) => {
         logger.error.error(err);
-        return res.send({error: true, message: err.message});
+        res.send({error: err.name, message: err.message});
+        throw err;
       });
 
     return res.send({data: patterns});
