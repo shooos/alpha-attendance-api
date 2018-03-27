@@ -8,6 +8,10 @@ module.exports = {
       length: 16,
       key: true,
     },
+    label: {
+      type: 'string',
+      length: 255,
+    },
     startWorkingTime: {
       type: 'time',
     },
