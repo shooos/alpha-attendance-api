@@ -14,9 +14,12 @@ module.exports = {
       notNull: true,
       key: true,
     },
-    workPattern: {
+    dayOff: {
+      type: 'boolean',
+    },
+    workPatternId: {
       type: 'string',
-      length: 255,
+      length: 16,
     },
     startTime: {
       type: 'time',
