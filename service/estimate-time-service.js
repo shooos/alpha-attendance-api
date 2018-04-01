@@ -22,9 +22,7 @@ module.exports = (accessor) => {
 
     const queries = [];
     for (let estimate of data) {
-      let estimateId = estimate.estimateId || uniqid();
-
-      const estimateHours = await workPatternService.calcurateEstimateHours(estimate.workPattern, estimate);
+      const estimateHours = await workPatternService.calcurateEstimateHours(estimate.workPatternId, estimate);
       if (estimateHours.message) {
         logger.system.warn(estimateHours.message);
       }
@@ -32,8 +30,17 @@ module.exports = (accessor) => {
       const upsertEstimate = new UpsertQuery(estimateTimeModel);
       const values = createValuesObject(estimateTimeModel, estimate);
       values.member_id = authUser;
-      values.estimate_id = estimateId;
-      values.estimate_hours = estimateHours.hours;
+
+      if (estimate.dayOff) {
+        values.work_pattern_id = null;
+        values.start_time = null;
+        values.end_time = null;
+        values.estimate_hours = '00:00';
+        values.unclaimed_hours = '00:00';
+      } else {
+        values.estimate_hours = estimateHours.hours;
+        values.unclaimed_hours || (values.unclaimed_hours = '00:00');
+      }
       upsertEstimate.setValues(values, authUser);
       queries.push(upsertEstimate);
     }

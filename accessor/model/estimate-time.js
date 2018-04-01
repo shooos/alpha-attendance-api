@@ -16,6 +16,7 @@ module.exports = {
     },
     dayOff: {
       type: 'boolean',
+      notNull: true,
     },
     workPatternId: {
       type: 'string',
@@ -29,9 +30,11 @@ module.exports = {
     },
     estimateHours: {
       type: 'hours',
+      notNull: true,
     },
     unclaimedHours: {
       type: 'hours',
+      notNull: true,
     },
   }, commonInfo),
 }

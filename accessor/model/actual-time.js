@@ -30,6 +30,7 @@ module.exports = {
     },
     dutyHours: {
       type: 'hours',
+      notNull: true,
     },
   }, commonInfo),
 }

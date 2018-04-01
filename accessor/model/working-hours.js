@@ -18,6 +18,7 @@ module.exports = {
     },
     breakTime: {
       type: 'boolean',
+      notNull: true,
     },
   }, commonInfo),
 }
