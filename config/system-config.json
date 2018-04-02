@@ -1,7 +1,7 @@
 {
   "port": 8080,
   "authentication": {
-    "effectiveTime": 1800000
+    "effectiveTime": 86400000
   },
   "adminUser": {
     "userId": "admin",
