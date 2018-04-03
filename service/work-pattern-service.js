@@ -146,7 +146,7 @@ module.exports = (accessor) => {
       message: null,
     };
     const pattern = await getWorkPattern(workPatternId);
-    const hours = await getWorkingHours(workPatbreakTimeternId);
+    const hours = await getWorkingHours(workPatternId);
     if (pattern == null || hours == null) {
       result.message = 'Work pattern [' + workPatternId + '] is not registerd.';
       return result;

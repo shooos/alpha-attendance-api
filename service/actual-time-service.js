@@ -24,7 +24,7 @@ module.exports = (accessor) => {
   const registerActualTime = async (authUser, data) => {
     logger.system.debug('actual-time-service#registerActualTime', data);
 
-    const workingHours = await workPatternService.calcurateWorkingTime(data.workPattern, data.detail);
+    const workingHours = await workPatternService.calcurateWorkingTime(data.workPatternId, data.detail);
     if (workingHours.message) {
       logger.system.debug(workingHours.message, workingHours);
     }
@@ -62,8 +62,8 @@ module.exports = (accessor) => {
       queries.push(upsertPcodeHours);
     }
 
-    await accessor.execute(queries);
-    return actualId;
+    const result = await accessor.execute(queries);
+    return result;
   }
 
   /**

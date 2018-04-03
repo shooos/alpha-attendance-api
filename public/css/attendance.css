@@ -1,4 +1,5 @@
-table.alpha-attendance-table {
+table.alpha-attendance-table,
+form[name="indexForm"] > table {
   font-size: 14px;
   font-family: monospace;
   border-collapse: collapse;
@@ -6,22 +7,27 @@ table.alpha-attendance-table {
 }
 
 table.alpha-attendance-table td,
-table.alpha-attendance-table th {
+table.alpha-attendance-table th,
+form[name="indexForm"] > table td,
+form[name="indexForm"] > table th {
   border: none;
   padding: 0;
 }
 
-table.alpha-attendance-table tbody th {
+table.alpha-attendance-table tbody th,
+form[name="indexForm"] > table tbody th {
   background: #aaa;
   padding: 8px 8px;
   border: 2px solid white;
 }
 
-table.alpha-attendance-table tbody tr:not(.stateSave):not(.statePresent):not(.stateRecognition) {
+table.alpha-attendance-table tbody tr:not(.stateSave):not(.statePresent):not(.stateRecognition),
+form[name="indexForm"] > table tbody tr {
   background: #ededed;
 }
 
-table.alpha-attendance-table tbody td {
+table.alpha-attendance-table tbody td,
+form[name="indexForm"] > table tbody td {
   padding: 8px 8px;
   border: 2px solid white;
 }

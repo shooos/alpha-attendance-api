@@ -87,17 +87,19 @@ module.exports = (accessor) => {
       memberId: body.memberId,
       date: body.date,
     });
-    const actualId = await actualService.registerActualTime(authUser, {
+    const result = await actualService.registerActualTime(authUser, {
       memberId: body.memberId,
       date: body.date,
       actualId: record.length ? record[0].actual_id : null,
-      workPattern: body.workPattern,
+      workPatternId: body.workPatternId,
       detail: body.detail,
+    }).catch((err) => {
+      logger.error.error(err.name, err.message);
+      res.send({error: err.name, message: error.message});
+      throw err;
     });
 
-    return res.send({data: {
-      actualId: actualId,
-    }});
+    return res.send({data: result});
   });
 
   /** 稼働実績一覧取得（年月指定） */

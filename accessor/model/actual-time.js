@@ -18,9 +18,9 @@ module.exports = {
       type: 'string',
       length: 16,
     },
-    workPattern: {
+    workPatternId: {
       type: 'string',
-      length: 255,
+      length: 16,
     },
     startTime: {
       type: 'time',
