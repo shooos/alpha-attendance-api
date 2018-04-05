@@ -103,7 +103,7 @@ module.exports = (accessor) => {
   }
 
   /** 勤務時間サマリ取得 */
-  const getActualTimeSummery = async (condition) => {
+  const getActualTimeSummary = async (condition) => {
     logger.system.debug('actual-time-service#getActualTimeSummery', condition);
 
     const selectQuery = new SelectQuery(actualTimeModel);
@@ -122,6 +122,6 @@ module.exports = (accessor) => {
   return {
     registerActualTime: registerActualTime,
     getActualTime: getActualTime,
-    getActualTimeSummery: getActualTimeSummery,
+    getActualTimeSummary: getActualTimeSummary,
   }
 }

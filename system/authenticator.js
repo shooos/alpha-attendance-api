@@ -15,18 +15,6 @@ const Authenticator = function (accessor) {
   this._accessor = accessor;
 }
 
-/** 初期化 */
-Authenticator.prototype.initialize = async function() {
-  const initializeQuery = new UpdateQuery(memberModel);
-  initializeQuery.setUpdateValues({
-    token: null,
-    client: null,
-    auth_time: null,
-  });
-  initializeQuery.addCondition('AND', 'token', null, true);
-  await this._accessor.execute(initializeQuery);
-}
-
 /** メンバ登録 */
 Authenticator.prototype.register = async function (memberId, password, admin) {
   logger.system.debug('authenticator#register', memberId, password, admin);

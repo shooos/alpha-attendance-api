@@ -1,5 +1,6 @@
 table.alpha-attendance-table,
-form[name="indexForm"] > table {
+form[name="indexForm"] > table,
+table.alpha-attendance-summary-table {
   font-size: 14px;
   font-family: monospace;
   border-collapse: collapse;
@@ -9,7 +10,9 @@ form[name="indexForm"] > table {
 table.alpha-attendance-table td,
 table.alpha-attendance-table th,
 form[name="indexForm"] > table td,
-form[name="indexForm"] > table th {
+form[name="indexForm"] > table th,
+table.alpha-attendance-summary-table > td,
+table.alpha-attendance-summary-table > th {
   border: none;
   padding: 0;
 }
@@ -18,7 +21,7 @@ table.alpha-attendance-table tbody th,
 form[name="indexForm"] > table tbody th {
   background: #aaa;
   padding: 8px 8px;
-  border: 2px solid white;
+  border: 2px solid #fff;
 }
 
 table.alpha-attendance-table tbody tr:not(.stateSave):not(.statePresent):not(.stateRecognition),
@@ -73,6 +76,24 @@ table.alpha-attendance-table td.alpha-attendance-center > label:hover {
 table.alpha-attendance-table td.alpha-attendance-center input[type="checkbox"] {
   margin-top: 12px;
   cursor: pointer;
+}
+
+table.alpha-attendance-summary-table tbody th {
+  background: #596ea2;
+  padding: 10px 10px;
+  border: 2px solid #fff;
+  color: #fff;
+}
+
+table.alpha-attendance-summary-table tbody td {
+  background: #eee;
+  padding: 10px 25px;
+  border: 2px solid #fff;
+  font-size: 16px;
+}
+
+table.alpha-attendance-summary-table .alpha-attendance-summary-info > th {
+  background: #5d8e40;
 }
 
 div.alpha-attendance-toolbox {
@@ -167,4 +188,41 @@ div.alpha-attendance-dialog .buttons-section .dialog-button-done {
 
 div.alpha-attendance-dialog .buttons-section .dialog-button-done:hover {
   background: #3b758e;
+}
+
+form[name="inputForm"] > input[type="button"],
+form[name="indexForm"] > input[type="button"] {
+  display: inline-block;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  margin: 0;
+  height: auto;
+  min-width: unset;
+  padding: 10px 25px;
+  text-decoration: none;
+  color: #0075bb;
+  background: #ECECEC;
+  transition: background .4s, color .4s;
+}
+
+form[name="inputForm"] > input[type="button"] {
+  color: #0075bb;
+  background: #ECECEC;
+}
+
+form[name="inputForm"] > input[type="button"]:hover {
+  background: #57a1ab;
+  color: white;
+}
+
+form[name="indexForm"] > input[type="button"] {
+  color: #dca400;
+  background: #ECECEC;
+}
+
+form[name="indexForm"] > input[type="button"]:hover {
+  background: #d0a400;
+  color: white;
 }

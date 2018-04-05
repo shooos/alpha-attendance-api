@@ -74,7 +74,7 @@ module.exports = (accessor) => {
   }
 
   /** 予測時間サマリを取得 */
-  const getEstimateTimeSummery = async (condition) => {
+  const getEstimateTimeSummary = async (condition) => {
     logger.system.debug('estimate-time-service#getEstimateTimeSummery', condition);
 
     const selectEstimate = new SelectQuery(estimateTimeModel);
@@ -115,6 +115,6 @@ module.exports = (accessor) => {
   return {
     registerEstimateTime: registerEstimateTime,
     getEstimateTime: getEstimateTime,
-    getEstimateTimeSummery: getEstimateTimeSummery,
+    getEstimateTimeSummary: getEstimateTimeSummary,
   };
 }

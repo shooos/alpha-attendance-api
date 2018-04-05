@@ -13,7 +13,6 @@ app.use(express.static(__dirname + '/public'));
 app.use(logger.express);
 
 const Accessor = require('./accessor/postgres');
-const Authenticator = require('./system/authenticator');
 const attendanceAPI = require('./routes/attendance');
 const userAPI = require('./routes/user');
 const workPatternAPI = require('./routes/work-pattern');
@@ -22,9 +21,6 @@ const accessor = new Accessor();
 
 accessor.initialize()
 .then(async () => {
-  const authenticator = new Authenticator(accessor);
-  await authenticator.initialize();
-
   app.head('/alpha', (req, res) => {
     return res.send('ok');
   });

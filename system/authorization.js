@@ -9,14 +9,18 @@ module.exports = function (accessor) {
     const client = req.header('x-forwarded-for') || req.connection.remoteAddress;
 
     if (!auth) {
+      logger.error.error('AuthorizationRequired');
       res.set('WWW-Authenticate', 'Bearer realm="Authorization Required"');
       return res.status(401).send({error: true, message: 'Authorization Required'});
     } else {
       const token = auth.split(' ').pop();
-      const member = await authenticator.authenticate(token, client).catch((err) => {
+      const member = await authenticator.authenticate(token, client)
+      .catch((err) => {
         logger.error.error('Authentication Failure', err);
-        return res.status(401).send({error: true, message: 'Authentication Failure'});
+        res.status(401).send({error: true, message: 'Authentication Failure'});
+        throw err;
       });
+
       if (member.memberId == null) {
         return res.status(401).send({error: true, message: 'Authentication Failure'});
       }

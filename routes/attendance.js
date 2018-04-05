@@ -7,6 +7,7 @@ const MSG = require('../config/message/system-messages.json');
 
 module.exports = (accessor) => {
   /* Services */
+  const attendanceService = require('../service/attendance-service')(accessor);
   const estimateService = require('../service/estimate-time-service')(accessor);
   const actualService = require('../service/actual-time-service')(accessor);
 
@@ -55,16 +56,6 @@ module.exports = (accessor) => {
     return res.send({data: results[0]});
   });
 
-  /** 稼働実績サマリ取得（年月指定） */
-  router.get('/summary/estimates/:year?/:month?/:memberId?', async (req, res) => {
-    const results = await estimateService.getEstimateTimeSummery({
-      memberId: req.params.memberId || null,
-      year: req.params.year || (current.getFullYear()),
-      month: req.params.month || (current.getMonth() + 1),
-    });
-    return res.send({data: results});
-  });
-
   /** 稼働実績登録・更新 */
   router.post('/actual', async (req, res) => {
     const body = req.body;
@@ -109,7 +100,12 @@ module.exports = (accessor) => {
       memberId: req.params.memberId,
       year: req.params.year || (current.getFullYear()),
       month: req.params.month || (current.getMonth() + 1),
+    }).catch((err) => {
+      logger.error.error(err.name, err.message);
+      res.send({error: err.name, message: error.message});
+      throw err;
     });
+
     return res.send({data: results});
   });
 
@@ -118,17 +114,27 @@ module.exports = (accessor) => {
     const results = await actualService.getActualTime({
       memberId: req.params.memberId,
       date: req.params.date || new Date(),
+    }).catch((err) => {
+      logger.error.error(err.name, err.message);
+      res.send({error: err.name, message: error.message});
+      throw err;
     });
+
     return res.send({data: results[0]});
   });
 
-  /** 稼働実績サマリ取得（年月指定） */
-  router.get('/summary/actuals/:year?/:month?/:memberId?', async (req, res) => {
-    const results = await actualService.getActualTimeSummery({
-      memberId: req.params.memberId || null,
-      year: req.params.year || (current.getFullYear()),
-      month: req.params.month || (current.getMonth() + 1),
+  /** 稼働月間サマリ取得 */
+  router.get('/summary/:year/:month/:memberId?', async (req, res) => {
+    const results = await attendanceService.getSummary({
+      year: req.params.year,
+      month: req.params.month,
+      membeId: req.params.memberId,
+    }).catch((err) => {
+      logger.error.error(err.name, err.message);
+      res.send({error: err.name, message: err.message});
+      throw err;
     });
+
     return res.send({data: results});
   });
 
