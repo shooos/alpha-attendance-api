@@ -99,7 +99,7 @@ module.exports = (accessor) => {
     logger.system.debug('work-pattern-service#calcurateEstimateHours', workPatternId, estimate);
 
     const result = {
-      hours: '00:00',
+      hours: '0:00',
       message: null,
     };
     const pattern = await getWorkPattern(workPatternId);
@@ -109,7 +109,7 @@ module.exports = (accessor) => {
       return result;
     }
 
-    let breakTime = '00:00';
+    let breakTime = '0:00';
     const start = timeCalcurator.max(pattern.startBeforeCoreTime, estimate.startTime);
     const end = timeCalcurator.min(pattern.endWorkingTime, estimate.endTime);
     const diff = timeCalcurator.subtraction(end, start);
@@ -139,9 +139,9 @@ module.exports = (accessor) => {
     logger.system.debug('work-pattern-service#calcurateWorkingTime', workPatternId, detail);
 
     const result = {
-      dutyHours: '00:00',
-      startTime: '00:00',
-      endTime: '00:00',
+      dutyHours: '0:00',
+      startTime: '0:00',
+      endTime: '0:00',
       times: [],
       message: null,
     };
@@ -154,13 +154,13 @@ module.exports = (accessor) => {
 
     const wTimes = {};
     let start = '99:99';
-    let end = '00:00';
+    let end = '0:00';
     let index = 0;
     let length = hours.length;
     for (let t of [].concat(detail)) {
       let begin = timeCalcurator.max(t.beginTime, pattern.startBeforeCoreTime);
       let finish = timeCalcurator.min(t.finishTime, pattern.endWorkingTime);
-      let breakTime = '00:00';
+      let breakTime = '0:00';
 
       for (; index < length; index++) {
         const wh = hours[index];
@@ -184,12 +184,12 @@ module.exports = (accessor) => {
       end = timeCalcurator.max(end, finish);
 
       const workTime = timeCalcurator.subtraction(timeCalcurator.subtraction(finish, begin), breakTime);
-      let time = wTimes[t.pCode] || '00:00';
+      let time = wTimes[t.pCode] || '0:00';
       wTimes[t.pCode] = timeCalcurator.addition(time, workTime);
     }
 
     const times = [];
-    let dutyHours = '00:00';
+    let dutyHours = '0:00';
     for (let pCode of Object.keys(wTimes)) {
       dutyHours = timeCalcurator.addition(dutyHours, wTimes[pCode]);
       times.push({

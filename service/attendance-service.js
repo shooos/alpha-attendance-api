@@ -31,7 +31,7 @@ module.exports = (accessor) => {
     values.push(condition.month);
 
     const sql = [];
-    sql.push('SELECT T2.p_code, T2.duty_hours FROM actual_time T1');
+    sql.push('SELECT T1.member_id, T2.p_code, T2.duty_hours FROM actual_time T1');
     sql.push('INNER JOIN actual_time_pcode T2 ON T1.actual_id=T2.actual_id');
     sql.push('WHERE');
     sql.push('EXTRACT(YEAR FROM T1.date)=$1');
@@ -50,8 +50,8 @@ module.exports = (accessor) => {
     const results = {};
     for (let record of responses[0]) {
       const member = results[record.member_id] || (results[record.member_id] = {});
-      const summary = member[record.pCode] || '00:00';
-      member[record.pCode] = timeCalc.addition(summary, record.duty_hours);
+      const summary = member[record.p_code] || '0:00';
+      member[record.p_code] = timeCalc.addition(summary, moment.utc(moment.duration(record.duty_hours).asMilliseconds()).format('H:mm'));
     }
 
     return results;
@@ -72,8 +72,8 @@ module.exports = (accessor) => {
     const results = {};
     for (let record of responses) {
       const member = results[record.memberId] || (results[record.memberId] = {});
-      const claimed = member.claimed || '00:00';
-      const unclaimed = member.unclaimed || '00:00';
+      const claimed = member.claimed || '0:00';
+      const unclaimed = member.unclaimed || '0:00';
       if (!record.dayOff) {
         member.claimed = timeCalc.addition(claimed, timeCalc.subtraction(record.estimateHours, record.unclaimedHours));
         member.unclaimed = timeCalc.addition(unclaimed, record.unclaimedHours);

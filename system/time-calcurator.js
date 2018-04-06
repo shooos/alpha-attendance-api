@@ -1,9 +1,8 @@
 const logger = require('../system/logger');
 
 const format = (h, m) => {
-  const hh = ('0' + h).slice(-2);
   const mm = ('0' + m).slice(-2);
-  return [hh, mm].join(':');
+  return [h, mm].join(':');
 }
 
 /**
@@ -83,7 +82,7 @@ const addition = (a, b) => {
 
 /** 合計 */
 const sum = (...args) => {
-  if (!times) return '00:00';
+  if (!times) return '0:00';
 
   const times = [].concat(args);
   let sum = times.shift();
@@ -96,7 +95,7 @@ const sum = (...args) => {
 
 /** 最大値 */
 const max = (...args) => {
-  if (!args) return '00:00';
+  if (!args) return '0:00';
 
   const times = [].concat(args);
   let max = times.shift();
@@ -109,7 +108,7 @@ const max = (...args) => {
 
 /** 最小値 */
 const min = (...args) => {
-  if (!args) return '00:00';
+  if (!args) return '0:00';
 
   const times = [].concat(args);
   let min = times.shift();

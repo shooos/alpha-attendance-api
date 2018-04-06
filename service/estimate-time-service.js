@@ -35,11 +35,11 @@ module.exports = (accessor) => {
         values.work_pattern_id = null;
         values.start_time = null;
         values.end_time = null;
-        values.estimate_hours = '00:00';
-        values.unclaimed_hours = '00:00';
+        values.estimate_hours = '0:00';
+        values.unclaimed_hours = '0:00';
       } else {
         values.estimate_hours = estimateHours.hours;
-        values.unclaimed_hours || (values.unclaimed_hours = '00:00');
+        values.unclaimed_hours || (values.unclaimed_hours = '0:00');
       }
       upsertEstimate.setValues(values, authUser);
       queries.push(upsertEstimate);
@@ -94,8 +94,8 @@ module.exports = (accessor) => {
 
       if (!(memberId in result)) {
         result[memberId] = {
-          estimateHours: '00:00',
-          unclaimedHours: '00:00',
+          estimateHours: '0:00',
+          unclaimedHours: '0:00',
         };
       }
       result[memberId].estimateHours = timeCalc.addition(result[memberId].estimateHours, estimate.estimateHours);

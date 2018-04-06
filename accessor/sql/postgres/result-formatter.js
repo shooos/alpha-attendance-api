@@ -23,7 +23,7 @@ module.exports = function (rows) {
         result[key] = moment(row[columnName]);
         break;
       case 'hours':
-        result[key] = moment.utc(moment.duration(row[columnName]).asMilliseconds()).format('HH:mm');
+        result[key] = moment.utc(moment.duration(row[columnName]).asMilliseconds()).format('H:mm');
         break;
       default:
         result[key] = row[columnName];
