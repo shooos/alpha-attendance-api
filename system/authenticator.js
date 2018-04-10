@@ -47,10 +47,6 @@ Authenticator.prototype.login = async function (memberId, password, client) {
     const MemberNotFoundError = new Error(memberId + ' is not found.');
     MemberNotFoundError.name = 'MemberNotFoundError';
     throw MemberNotFoundError;
-  } else if (member[0].token != null) {
-    const AlreadyLoginError = new Error(memberId + ' is already login.');
-    AlreadyLoginError.name = 'AlreadyLoginError';
-    throw AlreadyLoginError;
   }
 
   const token = this.generateToken();
@@ -86,10 +82,12 @@ Authenticator.prototype.logout = async function (memberId) {
   updateQuery.addCondition('AND', 'token', null, true);
   updateQuery.addCondition('AND', 'client', null, true);
 
-  const result = await this._accessor.execute(updateQuery).catch((err) => {
+  const result = await this._accessor.execute(updateQuery)
+  .catch((err) => {
     logger.error.error('Logout failed.', err);
     return false;
   });
+
   if (!result.length) {
     logger.error.error(memberId + ' is not logged in.');
     return false;
@@ -106,27 +104,36 @@ Authenticator.prototype.authenticate = async function (token, client) {
   selectQuery.addCondition('AND', 'token', token);
   selectQuery.addCondition('AND', 'client', client);
 
-  const result = await this._accessor.execute(selectQuery).catch((err) => {
-    throw new Error('Authentication Error.');
+  const result = await this._accessor.execute(selectQuery)
+  .catch((err) => {
+    const e = new Error('Authentication Error.');
+    e.name = 'AuthenticationError';
+    throw e;
   });
+
   if (!result.length) {
-    throw new Error('Invalid token.');
-  }
-  if (moment(moment()).diff(result[0].authTime) > systemConf.authentication.effectiveTime) {
-    throw new Error('Token expired.');
+    const e = new Error('Invalid token.');
+    e.name = 'AuthenticationError';
+    throw e;
   }
 
-  // Tokenの有効期限を延長する
-  const updateQuery = new UpdateQuery(memberModel);
-  updateQuery.setUpdateValues({
-    auth_time: moment().utc(),
-  });
-  updateQuery.addCondition('AND', 'token', token);
-  updateQuery.addCondition('AND', 'client', client);
-  await this._accessor.execute(updateQuery)
-    .catch(() => {
-      // 有効期限延長に失敗してもエラーにしない.
-    });
+  if (moment(moment()).diff(result[0].authTime) > systemConf.authentication.effectiveTime) {
+    const e = new Error('Token expired.');
+    e.name = 'AuthenticationError';
+    throw e;
+  }
+
+  // // Tokenの有効期限を延長する
+  // const updateQuery = new UpdateQuery(memberModel);
+  // updateQuery.setUpdateValues({
+  //   auth_time: moment().utc(),
+  // });
+  // updateQuery.addCondition('AND', 'token', token);
+  // updateQuery.addCondition('AND', 'client', client);
+  // await this._accessor.execute(updateQuery)
+  // .catch(() => {
+  //   // 有効期限延長に失敗してもエラーにしない.
+  // });
 
   return {
     memberId: result[0].memberId,
