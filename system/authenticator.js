@@ -22,16 +22,45 @@ Authenticator.prototype.register = async function (memberId, password, admin) {
   const selectQuery = new SelectQuery(memberModel);
   selectQuery.addCondition('AND', 'member_id', memberId);
 
-  const members = await this._accessor.execute(selectQuery);
+  const member = await this._accessor.execute(selectQuery)
+  .catch((err) => {
+    logger.error.error(err);
+    throw err;
+  });
 
-  const isExists = !!(members).length;
-  if (isExists) {
+  if (member && member.length) {
+    // 既に同一IDが存在する場合エラー
     throw new Error(memberId + ' already exsists.');
   }
 
   const insertQuery = new InsertQuery(memberModel);
   insertQuery.setValues({member_id: memberId, password: password, admin: admin});
   await this._accessor.execute(insertQuery);
+}
+
+/** メンバ情報変更 */
+Authenticator.prototype.change = async function (memberId, oldInfo, newInfo) {
+  logger.system.debug('Authenticator#change', memberId, oldInfo, newInfo);
+
+  const selectQuery = new SelectQuery(memberModel);
+  selectQuery.addCondition('AND', 'member_id', memberId);
+  selectQuery.addCondition('AND', 'password', oldInfo.password);
+
+  const member = await this._accessor.execute(selectQuery);
+  if (!member || !member.length) {
+    const MemberNotFoundError = new Error(memberId + ' is not found.');
+    MemberNotFoundError.name = 'MemberNotFoundError';
+    throw MemberNotFoundError;
+  }
+
+  const updateQuery = new UpdateQuery(memberModel);
+  updateQuery.setUpdateValues({
+    password: newInfo.password,
+  });
+  updateQuery.addCondition('AND', 'member_id', memberId);
+
+  const result = await this._accessor.execute(updateQuery);
+  return result;
 }
 
 /** ログイン */

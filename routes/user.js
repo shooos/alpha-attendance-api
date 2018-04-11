@@ -11,7 +11,7 @@ module.exports = (accessor) => {
   const authenticator = new Authenticator(accessor);
 
   /** メンバ登録 */
-  router.post('/register', async (req, res) => {
+  router.post('/', async (req, res) => {
     const body = req.body;
     if (!body) {
       logger.error.error(MSG.BODY_PARAMS_REQUIRED);
@@ -20,11 +20,30 @@ module.exports = (accessor) => {
     }
 
     await authenticator.register(body.id, body.password, false)
-      .catch((err) => {
-        logger.error.error(err);
-        res.send({error: true, message: err.message});
-        throw err;
-      });
+    .catch((err) => {
+      logger.error.error(err);
+      res.send({error: true, message: err.message});
+      throw err;
+    });
+    return res.send({data: {}});
+  });
+
+  /** メンバ情報変更（パスワード変更） */
+  router.put('/', async (req, res) => {
+    const body = req.body;
+    if (!body) {
+      logger.error.error(MSG.BODY_PARAMS_REQUIRED);
+      res.send({error: '', message: MSG.BODY_PARAMS_REQUIRED});
+      throw new Error(MSG.BODY_PARAMS_REQUIRED);
+    }
+
+    await authenticator.change(body.id, body.oldInfo, body.newInfo)
+    .catch((err) => {
+      logger.error.error(err);
+      res.send({error: err.name, message: err.message});
+      throw err;
+    });
+
     return res.send({data: {}});
   });
 
