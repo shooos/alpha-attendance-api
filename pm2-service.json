@@ -1,0 +1,17 @@
+{
+  "apps": [
+    {
+      "name"      : "alpha-attendance-api",
+      "script"    : "./index.js",
+      "watch"     : true,
+      "source_map_support": true,
+      "env": {
+        "PORT": 3000,
+        "NODE_ENV": "development"
+      },
+      "env_production" : {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}
