@@ -16,7 +16,7 @@ module.exports = {
     },
     actualId: {
       type: 'string',
-      length: 16,
+      length: 32,
     },
     workPatternId: {
       type: 'string',

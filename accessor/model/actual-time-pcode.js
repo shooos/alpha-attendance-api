@@ -5,7 +5,7 @@ module.exports = {
   columns: Object.assign({
     actualId: {
       type: 'string',
-      length: 16,
+      length: 32,
       key: true,
     },
     pCode: {
