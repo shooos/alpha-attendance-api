@@ -25,8 +25,8 @@ accessor.initialize()
     return res.send('ok');
   });
 
-  app.use('/alpha/attendance', attendanceAPI(accessor));
   app.use('/alpha/user', userAPI(accessor));
+  app.use('/alpha/attendance', attendanceAPI(accessor));
   app.use('/alpha/workPattern', workPatternAPI(accessor));
 
   app.listen(systemConf.port || 3000, () => {

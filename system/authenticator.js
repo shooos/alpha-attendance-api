@@ -5,6 +5,7 @@ const logger = require('../system/logger');
 
 /* Queries */
 const SelectQuery = require('../accessor/sql/postgres/select-query');
+const UpsertQuery = require('../accessor/sql/postgres/upsert-query');
 const UpdateQuery = require('../accessor/sql/postgres/update-query');
 const InsertQuery = require('../accessor/sql/postgres/insert-query');
 
@@ -15,68 +16,14 @@ const Authenticator = function (accessor) {
   this._accessor = accessor;
 }
 
-/** メンバ登録 */
-Authenticator.prototype.register = async function (memberId, password, admin) {
-  logger.system.debug('authenticator#register', memberId, password, admin);
-
-  const selectQuery = new SelectQuery(memberModel);
-  selectQuery.addCondition('AND', 'member_id', memberId);
-
-  const member = await this._accessor.execute(selectQuery)
-  .catch((err) => {
-    logger.error.error(err);
-    throw err;
-  });
-
-  if (member && member.length) {
-    // 既に同一IDが存在する場合エラー
-    throw new Error(memberId + ' already exsists.');
-  }
-
-  const insertQuery = new InsertQuery(memberModel);
-  insertQuery.setValues({member_id: memberId, password: password, admin: admin});
-  await this._accessor.execute(insertQuery);
-}
-
-/** メンバ情報変更 */
-Authenticator.prototype.change = async function (memberId, oldInfo, newInfo) {
-  logger.system.debug('Authenticator#change', memberId, oldInfo, newInfo);
-
-  const selectQuery = new SelectQuery(memberModel);
-  selectQuery.addCondition('AND', 'member_id', memberId);
-  selectQuery.addCondition('AND', 'password', oldInfo.password);
-
-  const member = await this._accessor.execute(selectQuery);
-  if (!member || !member.length) {
-    const MemberNotFoundError = new Error(memberId + ' is not found.');
-    MemberNotFoundError.name = 'MemberNotFoundError';
-    throw MemberNotFoundError;
-  }
-
-  const updateQuery = new UpdateQuery(memberModel);
-  updateQuery.setUpdateValues({
-    password: newInfo.password,
-  });
-  updateQuery.addCondition('AND', 'member_id', memberId);
-
-  const result = await this._accessor.execute(updateQuery);
-  return result;
-}
-
 /** ログイン */
-Authenticator.prototype.login = async function (memberId, password, client) {
-  logger.system.debug('authenticator#login', memberId, password, client);
+Authenticator.prototype.login = async function (memberId, client) {
+  logger.system.debug('authenticator#login', memberId, client);
 
   const selectQuery = new SelectQuery(memberModel);
   selectQuery.addCondition('AND', 'member_id', memberId);
-  selectQuery.addCondition('AND', 'password', password);
 
   const member = await this._accessor.execute(selectQuery);
-  if (!member.length) {
-    const MemberNotFoundError = new Error(memberId + ' is not found.');
-    MemberNotFoundError.name = 'MemberNotFoundError';
-    throw MemberNotFoundError;
-  }
 
   const token = this.generateToken();
 
