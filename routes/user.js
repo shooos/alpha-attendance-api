@@ -19,17 +19,15 @@ module.exports = (accessor) => {
       throw new Error(MSG.BODY_PARAMS_REQUIRED);
     }
 
-    const result = await authenticator.login(body.id, false)
+    const client = req.header('x-forwarded-for') || req.connection.remoteAddress;
+    const result = await authenticator.login(body.id, client)
     .catch((err) => {
       logger.error.error(err);
       res.send({error: 'SignInError', message: err.message});
       throw err;
     });
 
-    return res.send({data: {
-      memberId: result.memberId,
-      token: result.token
-    }});
+    return res.send({data: result});
   });
 
   return router;

@@ -20,28 +20,30 @@ const Authenticator = function (accessor) {
 Authenticator.prototype.login = async function (memberId, client) {
   logger.system.debug('authenticator#login', memberId, client);
 
-  const selectQuery = new SelectQuery(memberModel);
-  selectQuery.addCondition('AND', 'member_id', memberId);
-
-  const member = await this._accessor.execute(selectQuery);
-
   const token = this.generateToken();
 
-  const updateQuery = new UpdateQuery(memberModel);
-  updateQuery.setUpdateValues({
-    token: token,
-    client: client,
-    auth_time: moment().utc(),
-  });
-  updateQuery.addCondition('AND', 'member_id', memberId);
-  updateQuery.addCondition('AND', 'password', password);
+  const upsertQuery = new UpsertQuery(memberModel);
+  upsertQuery.setValues({
+    'member_id': memberId,
+    'token': token,
+    'client': client,
+    'auth_time': moment().utc(),
+  }, memberId);
 
-  const result = await this._accessor.execute(updateQuery);
-  if (!result) {
+  const result = await this._accessor.execute(upsertQuery)
+  .catch((err) => {
+    logger.error.error('Login failed.', err);
+    throw err;
+  });
+
+  if (!result || !result.length) {
     throw new Error(memberId + ' is login failed.');
   }
 
-  return token;
+  return {
+    user: memberId,
+    token: token,
+  };
 }
 
 /** ログアウト */
@@ -61,10 +63,10 @@ Authenticator.prototype.logout = async function (memberId) {
   const result = await this._accessor.execute(updateQuery)
   .catch((err) => {
     logger.error.error('Logout failed.', err);
-    return false;
+    throw err;
   });
 
-  if (!result.length) {
+  if (!result || !result.length) {
     logger.error.error(memberId + ' is not logged in.');
     return false;
   }
@@ -98,18 +100,6 @@ Authenticator.prototype.authenticate = async function (token, client) {
     e.name = 'AuthenticationError';
     throw e;
   }
-
-  // // Tokenの有効期限を延長する
-  // const updateQuery = new UpdateQuery(memberModel);
-  // updateQuery.setUpdateValues({
-  //   auth_time: moment().utc(),
-  // });
-  // updateQuery.addCondition('AND', 'token', token);
-  // updateQuery.addCondition('AND', 'client', client);
-  // await this._accessor.execute(updateQuery)
-  // .catch(() => {
-  //   // 有効期限延長に失敗してもエラーにしない.
-  // });
 
   return {
     memberId: result[0].memberId,
